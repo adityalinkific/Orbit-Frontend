@@ -217,6 +217,15 @@
   transform: translateY(-50%);
   cursor: pointer;
   font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  transition: color 0.2s ease;
+}
+
+.password-wrap span:hover {
+  color: #333;
 }
 
 .password-row {
@@ -510,4 +519,14 @@
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+.feature-card svg {
+  font-size: 2.2rem;
+}
+
+
+.icon-btn svg {
+  font-size: 98px;
+  cursor: pointer;
 }

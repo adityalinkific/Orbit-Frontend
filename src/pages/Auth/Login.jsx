@@ -5,6 +5,11 @@ import { loginService } from "../../services/auth.service";
 import Toast from "../../components/feedback/Toast";
 import Loader from "../../components/common/Loader";
 import "./auth.css";
+import { FiEye, FiEyeOff } from "react-icons/fi";
+import { GiDna1 } from "react-icons/gi";
+import { MdOutlineLink } from "react-icons/md";
+import { FaRocket } from "react-icons/fa";
+
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -13,6 +18,7 @@ export default function Login() {
   const [toast, setToast] = useState(null);
   const [errors, setErrors] = useState({});
   const [shake, setShake] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -25,7 +31,7 @@ export default function Login() {
     try {
       const res = await loginService(form);
 
-      login(res);
+      login(res, rememberMe);
 
       // ✅ Role based redirect
       if (res.user?.role === "super_admin") {
@@ -76,15 +82,15 @@ export default function Login() {
 
         <div className="orbit-features">
           <div className="feature-item">
-            <div className="feature-card">🧬</div>
+            <div className="feature-card"><GiDna1 /></div>
             <span className="feature-tag">ALIGN</span>
           </div>
           <div className="feature-item">
-            <div className="feature-card">🔗</div>
+            <div className="feature-card"><MdOutlineLink /></div>
             <span className="feature-tag">CONNECT</span>
           </div>
           <div className="feature-item">
-            <div className="feature-card">🚀</div>
+            <div className="feature-card"><FaRocket /></div>
             <span className="feature-tag">ACCELERATE</span>
           </div>
         </div>
@@ -139,8 +145,10 @@ export default function Login() {
             <div className="remember">
               <input
                 type="checkbox"
-                style={{ width: "auto", marginTop: 0 }}
                 id="rem"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                style={{ width: "auto", marginTop: 0 }}
               />
               <label
                 htmlFor="rem"
