@@ -1,0 +1,513 @@
+.auth-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  width: 360px;
+  padding: 2.5rem;
+  border-radius: 18px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.auth-card h2 {
+  text-align: center;
+  font-size: 1.7rem;
+  color: #0f172a;
+  margin-bottom: 0.5rem;
+}
+
+.auth-card input {
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.95rem;
+  transition: 0.25s ease;
+}
+
+.auth-card input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.password-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.password-wrap input {
+  width: 100%;
+  padding-right: 40px;
+  /* Space for the emoji */
+}
+
+.password-wrap span {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 1.2rem;
+  user-select: none;
+}
+
+.auth-card button {
+  margin-top: 0.5rem;
+  padding: 0.7rem;
+  background: #2563eb;
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.auth-card button:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.auth-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0px;
+  margin-bottom: -1rem;
+  padding-right: 20px;
+  font-weight: 700;
+}
+
+.auth-logo img {
+  width: 60px;
+  height: 60px;
+}
+
+.auth-text {
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: rgb(1, 1, 1);
+}
+
+.orbit-auth {
+  display: flex;
+  height: 100vh;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+/* LEFT */
+
+.orbit-auth-left {
+  flex: 1;
+  background: linear-gradient(135deg, #1f6efb, #3f8cff);
+  color: white;
+  padding: 60px;
+  position: relative;
+  overflow: hidden;
+}
+
+.orbit-brand {
+  display: flex;
+  align-items: center;
+  gap: 0px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  font-size: 44px;
+}
+
+.orbit-brand img {
+  width: 104px;
+  height: 104px;
+  object-fit: cover;
+}
+
+.orbit-auth-left h1 {
+  margin-top: 120px;
+  font-size: 56px;
+  line-height: 1.1;
+}
+
+.orbit-auth-left h1 span {
+  color: #eaf1ff;
+}
+
+.orbit-auth-left p {
+  margin-top: 20px;
+  max-width: 420px;
+  opacity: 0.9;
+}
+
+.orbit-features {
+  margin-top: 80px;
+  display: flex;
+  gap: 20px;
+  /* background-color: #000000; */
+}
+
+.feature-card {
+  width: 72px;
+  height: 72px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  backdrop-filter: blur(8px);
+}
+
+
+
+/* RIGHT */
+
+.orbit-auth-right {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+}
+
+.orbit-form {
+  width: 360px;
+}
+
+.orbit-form h2 {
+  font-size: 28px;
+}
+
+.orbit-form span {
+  color: #666;
+  font-size: 14px;
+}
+
+.orbit-form label {
+  display: block;
+  margin-top: 28px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #777;
+}
+
+.orbit-form input {
+  width: 100%;
+  padding: 14px 16px;
+  margin-top: 6px;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  outline: none;
+}
+
+.password-wrap {
+  position: relative;
+}
+
+.password-wrap span {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 1.4rem;
+}
+
+.password-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24px;
+}
+
+.forgot {
+  font-size: 12px;
+  color: #1f6efb;
+  cursor: pointer;
+}
+
+.remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 20px 0;
+}
+
+.orbit-form button {
+  width: 100%;
+  background: linear-gradient(135deg, #1f6efb, #3f8cff);
+  border: none;
+  padding: 14px;
+  color: white;
+  border-radius: 14px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.orbit-footer {
+  margin-top: 40px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+
+/* ===== ENHANCED LEFT PANEL ===== */
+
+.orbit-auth-left {
+  flex: 1;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.18), transparent 40%),
+    radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.12), transparent 45%),
+    linear-gradient(135deg, #1b4fd8, #2f7cff, #4f9cff);
+  color: white;
+  padding: 70px;
+  position: relative;
+  overflow: hidden;
+}
+
+.orbit-auth-left::before,
+.orbit-auth-left::after {
+  content: "";
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.35;
+}
+
+.orbit-auth-left::before {
+  background: #ffffff;
+  top: -120px;
+  left: -120px;
+}
+
+.orbit-auth-left::after {
+  background: #5aa2ff;
+  bottom: -160px;
+  right: -160px;
+}
+
+.orbit-brand {
+  position: relative;
+  z-index: 2;
+}
+
+.orbit-auth-left h1 {
+  margin-top: 100px;
+  font-size: 56px;
+  line-height: 1.05;
+  letter-spacing: -1px;
+  text-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+}
+
+.orbit-auth-left p {
+  margin-top: 20px;
+  font-size: 15px;
+  max-width: 440px;
+  opacity: 0.92;
+}
+
+.orbit-features {
+  margin-top: 60px;
+  display: flex;
+  gap: 26px;
+}
+
+.feature-card {
+  width: 100px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  font-size: 42px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  transition: transform .3s ease, box-shadow .3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-6px) scale(1.05);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
+  z-index: 10;
+}
+
+.orbit-logo-card {
+  width: 100px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.205);
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  margin-right: 20px;
+}
+
+.orbit-logo-card img {
+  width: 90px;
+  height: 90px;
+}
+
+.feature-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.feature-tag {
+  font-size: 11px;
+  letter-spacing: 2px;
+  opacity: 0.8;
+  font-weight: 600;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* Floating light particles */
+
+@keyframes floatGlow {
+  from {
+    transform: translateY(0px);
+  }
+
+  to {
+    transform: translateY(-30px);
+  }
+}
+
+.orbit-auth-left::before {
+  animation: floatGlow 8s ease-in-out infinite alternate;
+}
+
+.orbit-auth-left::after {
+  animation: floatGlow 10s ease-in-out infinite alternate-reverse;
+}
+
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.35;
+}
+
+.orb1 {
+  width: 280px;
+  height: 280px;
+  background: #ffffff;
+  top: 120px;
+  right: 80px;
+}
+
+.orb2 {
+  width: 320px;
+  height: 320px;
+  background: #6fb1ff;
+  bottom: 120px;
+  left: 80px;
+}
+
+/* ===== ORBIT LOGO ROTATION ===== */
+
+@keyframes orbitRotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.orbit-logo-card img {
+  animation: orbitRotate 14s linear infinite;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.orbit-logo-card img:hover {
+  animation-play-state: paused;
+}
+
+
+/* ===== ERROR STATES ===== */
+
+.input-error {
+  border: 1px solid #ff4d4f !important;
+  background: rgba(255, 77, 79, 0.05);
+}
+
+.error-text {
+  color: #ff4d4f;
+  font-size: 12px;
+  margin-top: 6px;
+  display: block;
+}
+
+/* ===== SHAKE EFFECT ===== */
+
+@keyframes shake {
+  0% {
+    transform: translateX(0);
+  }
+
+  20% {
+    transform: translateX(-6px);
+  }
+
+  40% {
+    transform: translateX(6px);
+  }
+
+  60% {
+    transform: translateX(-6px);
+  }
+
+  80% {
+    transform: translateX(6px);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.shake {
+  animation: shake 0.4s ease;
+}
+
+
+.toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  background: #ff4d4f;
+  color: white;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  z-index: 9999;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, .25);
+  animation: slideIn .3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(40px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
