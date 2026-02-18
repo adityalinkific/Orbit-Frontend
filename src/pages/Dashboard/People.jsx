@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import useAuth from "../../hooks/useAuth";
-import { rolesService } from "../../services/auth.service";
+import { rolesService, departmentsService } from "../../services/auth.service";
 import {
   getAllUsers,
   createUserService,
@@ -11,8 +11,10 @@ export default function People() {
   const { user } = useAuth();
 
   const [roles, setRoles] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [open, setOpen] = useState(false);
 
   const [form, setForm] = useState({
@@ -20,6 +22,10 @@ export default function People() {
     email: "",
     password: "",
     role_id: "",
+    reporting_manager_id: null,
+    department_id: "",
+    is_active: true,
+    joined_date: new Date().toISOString().split("T")[0],
   });
 
   /* ---------------- FETCH ROLES ---------------- */
@@ -35,37 +41,66 @@ export default function People() {
   /* ---------------- FETCH USERS ---------------- */
   const fetchUsers = async () => {
     try {
-      setLoading(true);
-      const res = await getAllUsers();
-      setUsers(Array.isArray(res) ? res : []);
+      setLoadingUsers(true);
+      const data = await getAllUsers();
+      setUsers(data);
     } catch (err) {
       console.error("Failed to fetch users:", err);
     } finally {
-      setLoading(false);
+      setLoadingUsers(false);
+    }
+  };
+
+  /* ---------------- FETCH DEPARTMENTS ---------------- */
+  const fetchDepartments = async () => {
+    try {
+      setLoadingDepartments(true);
+      const data = await departmentsService();
+      setDepartments(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to fetch departments:", err);
+    } finally {
+      setLoadingDepartments(false);
     }
   };
 
   useEffect(() => {
     refreshRoles();
     fetchUsers();
+    fetchDepartments();
   }, []);
 
+  /* ---------------- CREATE USER ---------------- */
   /* ---------------- CREATE USER ---------------- */
   const submit = async (e) => {
     e.preventDefault();
     try {
-      await createUserService(form);
+      await createUserService({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        role_id: Number(form.role_id),
+        department_id: Number(form.department_id),
+        reporting_manager_id: form.reporting_manager_id,
+        is_active: form.is_active,
+        joined_date: form.joined_date,
+      });
       await fetchUsers();
       setOpen(false);
       setForm({
         name: "",
         email: "",
         password: "",
-        role: "",
-        department: "",
+        role_id: "",
+        reporting_manager_id: null,
+        department_id: "",
+        is_active: true,
+        joined_date: new Date().toISOString().split("T")[0],
       });
+      alert("User created successfully");
     } catch (err) {
       console.error("Failed to create user:", err);
+      alert(err.message || "Failed to create user");
     }
   };
 
@@ -93,23 +128,30 @@ export default function People() {
           <thead>
             <tr>
               <th>Name</th>
+              <th>Email</th>
               <th>Role</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
-            {loading && (
+            {loadingUsers ? (
               <tr>
-                <td colSpan="2">Loading...</td>
+                <td colSpan="4">Loading users...</td>
               </tr>
-            )}
-
-            {!loading &&
-              users.map((u, i) => (
-                <tr key={i}>
-                  <td>{u.name || u.role_name}</td>
-                  <td>{u.role}</td>
+            ) : users.length === 0 ? (
+              <tr>
+                <td colSpan="4">No users found</td>
+              </tr>
+            ) : (
+              users.map((user) => (
+                <tr key={user.id}>
+                  <td>{user.name}</td>
+                  <td>{user.email}</td>
+                  <td>{user.role?.role || "N/A"}</td>
+                  <td>{user.is_active ? "Active" : "Inactive"}</td>
                 </tr>
-              ))}
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -164,17 +206,39 @@ export default function People() {
               </select>
 
               <select
-                value={form.department}
+                value={form.department_id}
                 onChange={(e) =>
-                  setForm({ ...form, department: e.target.value })
+                  setForm({ ...form, department_id: e.target.value })
                 }
                 required
               >
                 <option value="">Select Department</option>
-                <option value="Engineering">Engineering</option>
-                <option value="HR">HR</option>
-                <option value="Finance">Finance</option>
+                {departments.map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
               </select>
+
+              <input
+                type="date"
+                value={form.joined_date}
+                onChange={(e) =>
+                  setForm({ ...form, joined_date: e.target.value })
+                }
+                required
+              />
+
+              <label style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "10px" }}>
+                <input
+                  type="checkbox"
+                  checked={form.is_active}
+                  onChange={(e) =>
+                    setForm({ ...form, is_active: e.target.checked })
+                  }
+                />
+                Active
+              </label>
 
               <div className="form-actions">
                 <button className="primary-btn">Create</button>

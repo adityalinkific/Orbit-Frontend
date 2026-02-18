@@ -32,7 +32,7 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error(`API Error ${error.config?.url}:`, error.response?.data || error.message);
+    console.error(`API Error ${error.config?.url}:`, JSON.stringify(error.response?.data || error.message, null, 2));
     // Optional global error handling
     if (error.response?.status === 401) {
       console.warn("Unauthorized. Token may be invalid.");

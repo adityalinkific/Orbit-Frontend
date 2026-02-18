@@ -7,6 +7,15 @@ export const loginService = async (data) => {
     body: JSON.stringify(data),
   });
 
+  if (res.data?.status === false || res.status >= 400) {
+    const msg =
+      res.data?.message?.message ||
+      res.data?.message ||
+      res.data?.error ||
+      "Login failed";
+    throw new Error(msg);
+  }
+
   const token =
     res.data?.data?.access_token ||
     res.data?.access_token ||
@@ -36,6 +45,15 @@ export const registerService = async (data) => {
     method: "POST",
     body: JSON.stringify(data),
   });
+
+  if (res.data?.status === false || res.status >= 400) {
+    const msg =
+      res.data?.message?.message ||
+      res.data?.message ||
+      res.data?.error ||
+      "Registration failed";
+    throw new Error(msg);
+  }
 
   const token =
     res.data?.data?.access_token ||
@@ -93,9 +111,10 @@ export const createRoleService = async (data) => {
 };
 
 /* ---------------- GET ALL DEPARTMENTS ---------------- */
+/* ---------------- GET ALL DEPARTMENTS ---------------- */
 export const departmentsService = async () => {
   const res = await request("/departments", {
     method: "GET",
   });
-  return res.data;
+  return res.data.data;
 };

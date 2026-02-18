@@ -4,10 +4,11 @@ import { request } from "./api";
 
 /* ---------------- GET USERS (FROM ROLES API RESPONSE) ---------------- */
 export const getAllUsers = async () => {
-  // Since backend has no /users endpoint,
-  // we assume users list comes from roles or another supported endpoint.
-  const res = await rolesService();
-  return res;
+  const res = await request("/user/all-users", {
+    method: "GET",
+  });
+  // Assuming backend response: { status: true, data: [...] }
+  return res.data;
 };
 
 /* ---------------- CREATE USER ---------------- */
