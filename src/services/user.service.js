@@ -8,7 +8,7 @@ export const getAllUsers = async () => {
     method: "GET",
   });
   // Assuming backend response: { status: true, data: [...] }
-  return res.data;
+  return res.data?.data || [];
 };
 
 /* ---------------- CREATE USER ---------------- */

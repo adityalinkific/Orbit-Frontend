@@ -43,9 +43,10 @@ export default function People() {
     try {
       setLoadingUsers(true);
       const data = await getAllUsers();
-      setUsers(data);
+      setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch users:", err);
+      setUsers([]);
     } finally {
       setLoadingUsers(false);
     }
