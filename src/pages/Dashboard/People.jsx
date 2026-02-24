@@ -239,29 +239,23 @@ const sortedGroupedUsers = Object.entries(groupedUsers).sort(
 const handleSubmit = async (e) => {
   e.preventDefault();
 
+  const payload = {
+    name: form.name,
+    password: form.password,
+    role_id: Number(form.role_id),
+    department_id: Number(form.department_id),
+    reporting_manager_id: form.reporting_manager_id
+      ? Number(form.reporting_manager_id)
+      : null,
+    is_active: form.is_active,
+    joined_date: form.joined_date,
+  };
+
   try {
     if (editingUser) {
-      await updateUserService(editingUser.id, {
-        name: form.name,
-        email: form.email,
-        password: form.password, 
-        role_id: Number(form.role_id),
-        department_id: Number(form.department_id),
-        reporting_manager_id: form.reporting_manager_id || null,
-        is_active: form.is_active,
-        joined_date: form.joined_date,
-      });
+      await updateUserService(editingUser.id, payload);
     } else {
-      await createUserService({
-        name: form.name,
-        email: form.email,
-        password: form.password,
-        role_id: Number(form.role_id),
-        department_id: Number(form.department_id),
-        reporting_manager_id: form.reporting_manager_id || null,
-        is_active: form.is_active,
-        joined_date: form.joined_date,
-      });
+      await createUserService(payload);
     }
 
     closeModal();
@@ -270,6 +264,7 @@ const handleSubmit = async (e) => {
     console.error("Error saving user", err);
   }
 };
+
 
 
 

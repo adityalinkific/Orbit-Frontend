@@ -82,16 +82,17 @@ export default function Modal({
 
 
                 <div className="relative mt-2">
-                <input
-            required
-            type={showPassword ? "text" : "password"}
-            placeholder="Minimum 8 characters"
-            value={form.password}
-            onChange={(e) =>
-                setForm({ ...form, password: e.target.value })
-            }
-            className="w-full rounded-xl border border-slate-200 px-4 py-3 pr-12 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition"
-            />
+               <input
+  required={!editingUser}
+  type={showPassword ? "text" : "password"}
+  placeholder="Minimum 8 characters"
+  value={form.password}
+  onChange={(e) =>
+    setForm({ ...form, password: e.target.value })
+  }
+  className="w-full rounded-xl border border-slate-200 px-4 py-3 pr-12 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition"
+/>
+
 
 
 
