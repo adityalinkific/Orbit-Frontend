@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 
 
+
 /* ---------------- USER SERVICES ---------------- */
 import {
   getAllUsersService,
@@ -21,6 +22,7 @@ import useAuth from "../../hooks/useAuth";
 /* ---------------- ICONS ---------------- */
 import { HiDotsHorizontal } from "react-icons/hi";
 import { FiSearch, FiShield, FiUserPlus } from "react-icons/fi";
+import Modal from "../../components/common/Modal";
 
 /* ============================================================
    PEOPLE COMPONENT
@@ -148,23 +150,42 @@ export default function People() {
      GROUP USERS BY ROLE (Memoized for performance)
      ============================================================ */
 
-  const groupedUsers = useMemo(() => {
-    // Filter users by search query
-    const filtered = users.filter((u) =>
-      u.name?.toLowerCase().includes(search.toLowerCase())
-    );
+const groupedUsers = useMemo(() => {
+  const filtered = users.filter((u) =>
+    u.name?.toLowerCase().includes(search.toLowerCase())
+  );
 
-    const groups = {};
+  const groups = {};
 
-    // Group users under their role name
-    filtered.forEach((u) => {
-      const roleName = u.role?.role?.toUpperCase() || "OTHERS";
-      if (!groups[roleName]) groups[roleName] = [];
-      groups[roleName].push(u);
-    });
+  filtered.forEach((u) => {
+    const roleName = u.role?.role?.toUpperCase() || "OTHERS";
+    if (!groups[roleName]) groups[roleName] = [];
+    groups[roleName].push(u);
+  });
 
-    return groups;
-  }, [users, search]);
+  return groups;
+}, [users, search]);
+
+
+const rolePriority = {
+  "SUPER_ADMIN": 1,
+  "ADMIN": 2,
+  "EMPLOYEE": 3,
+};
+
+const sortedGroupedUsers = Object.entries(groupedUsers).sort(
+  ([roleA], [roleB]) => {
+    const normalizedA = roleA.trim().toUpperCase();
+    const normalizedB = roleB.trim().toUpperCase();
+
+    const priorityA = rolePriority[normalizedA] ?? 99;
+    const priorityB = rolePriority[normalizedB] ?? 99;
+
+    return priorityA - priorityB;
+  }
+);
+
+
 
   /* ============================================================
      VIEW USER DETAILS
@@ -215,41 +236,42 @@ export default function People() {
   /* ============================================================
      SUBMIT FORM (CREATE OR UPDATE)
      ============================================================ */
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    try {
-      if (editingUser) {
-        // Update existing user
-        await updateUserService(editingUser.id, {
-          name: form.name,
-          email: form.email,
-          role_id: Number(form.role_id),
-          department_id: Number(form.department_id),
-          reporting_manager_id: form.reporting_manager_id || null,
-          is_active: form.is_active,
-          joined_date: form.joined_date,
-        });
-      } else {
-        // Create new user
-        await createUserService({
-          name: form.name,
-          email: form.email,
-          password: form.password,
-          role_id: Number(form.role_id),
-          department_id: Number(form.department_id),
-          reporting_manager_id: form.reporting_manager_id || null,
-          is_active: form.is_active,
-          joined_date: form.joined_date,
-        });
-      }
-
-      closeModal();
-      fetchUsers();
-    } catch (err) {
-      console.error("Error saving user", err);
+  try {
+    if (editingUser) {
+      await updateUserService(editingUser.id, {
+        name: form.name,
+        email: form.email,
+        password: form.password, 
+        role_id: Number(form.role_id),
+        department_id: Number(form.department_id),
+        reporting_manager_id: form.reporting_manager_id || null,
+        is_active: form.is_active,
+        joined_date: form.joined_date,
+      });
+    } else {
+      await createUserService({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        role_id: Number(form.role_id),
+        department_id: Number(form.department_id),
+        reporting_manager_id: form.reporting_manager_id || null,
+        is_active: form.is_active,
+        joined_date: form.joined_date,
+      });
     }
-  };
+
+    closeModal();
+    fetchUsers();
+  } catch (err) {
+    console.error("Error saving user", err);
+  }
+};
+
+
 
   /* ============================================================
      RESET FORM + CLOSE MODALS
@@ -327,7 +349,7 @@ export default function People() {
               className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-700 transition"
             >
               <FiUserPlus size={16} />
-              Invite
+              Create
             </button>
           </div>
         </div>
@@ -338,7 +360,7 @@ export default function People() {
             <div className="w-6 h-6 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
           </div>
         ) : (
-          Object.entries(groupedUsers).map(([roleName, roleUsers]) => (
+          sortedGroupedUsers.map(([roleName, roleUsers]) => (
             <div key={roleName} className="space-y-4">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-600 uppercase">
                 <FiShield className="w-4 h-4" />
@@ -349,7 +371,7 @@ export default function People() {
                 {roleUsers.map((u) => (
                   <div
                     key={u.id}
-                    className="bg-white rounded-xl border p-6 flex justify-between"
+                    className="bg-white rounded-xl border-gray-200 shadow-md  p-6 flex justify-between"
                   >
                     <div className="flex gap-4">
                       <div className="relative">
@@ -375,49 +397,41 @@ export default function People() {
                     </div>
 
 
-<div className="relative">
-  <button
-    onClick={(e) => {
-      e.stopPropagation();
-      setDropdownUserId(dropdownUserId === u.id ? null : u.id);
-    }}
-    className="p-1.5 rounded-lg hover:bg-slate-100 transition"
-  >
-    <HiDotsHorizontal size={20} className="text-slate-500" />
-  </button>
-  
-  {dropdownUserId === u.id && (
-    <div className="absolute right-0 mt-2 w-36 bg-white border rounded-lg shadow-lg z-20 animate-in slide-in-from-top-2 duration-200">
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          handleView(u);
-        }}
-        className="block text-slate-900 w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 first:rounded-t-lg last:rounded-b-lg transition-colors"
-      >
-        View
-      </button>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          handleEdit(u);
-        }}
-        className="block text-slate-900 w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 first:rounded-t-lg last:rounded-b-lg transition-colors"
-      >
-        Edit
-      </button>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          handleDelete(u.id);
-        }}
-        className="block w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 first:rounded-t-lg last:rounded-b-lg transition-colors"
-      >
-        Delete
-      </button>
-    </div>
-  )}
-</div>
+                  <div className="relative">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDropdownUserId(dropdownUserId === u.id ? null : u.id);
+                      }}
+                      className="p-1.5 rounded-lg hover:bg-slate-100 transition"
+                    >
+                      <HiDotsHorizontal size={20} className="text-slate-500" />
+                    </button>
+                    
+                      {dropdownUserId === u.id && (
+                        <div className="absolute right-0 mt-2 w-36 bg-white border rounded-lg shadow-lg z-20 animate-in slide-in-from-top-2 duration-200">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleView(u);
+                            }}
+                            className="block text-slate-900 w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 first:rounded-t-lg last:rounded-b-lg transition-colors"
+                          >
+                            View
+                          </button>
+                          
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(u.id);
+                            }}
+                            className="block w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 first:rounded-t-lg last:rounded-b-lg transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
 
                   </div>
                 ))}
@@ -427,116 +441,24 @@ export default function People() {
         )}
 
         {/* CREATE / EDIT MODAL */}
-        {showModal && (
-          <div className="fixed inset-0 bg-black/40 text-slate-800 flex items-center justify-center z-50 p-4">
-            <div className="bg-white w-full max-w-md rounded-xl p-6 space-y-4 shadow-lg">
-              <h2 className="text-lg font-semibold">
-                {editingUser ? "Edit User" : "Invite User"}
-              </h2>
+            <Modal
+              open={showModal}
+              onOpenChange={(value) => {
+                if (!value) {
+                  closeModal();
+                } else {
+                  setShowModal(true);
+                }
+              }}
+              editingUser={editingUser}
+              form={form}
+              setForm={setForm}
+              roles={roles}
+              departments={departments}
+              onSubmit={handleSubmit}
+            />
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <input
-                  required
-                  placeholder="Full Name"
-                  value={form.name}
-                  onChange={(e) =>
-                    setForm({ ...form, name: e.target.value })
-                  }
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
-                />
 
-                <input
-                  required
-                  type="email"
-                  placeholder="Email"
-                  value={form.email}
-                  onChange={(e) =>
-                    setForm({ ...form, email: e.target.value })
-                  }
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
-                />
-
-                {!editingUser && (
-                  <input
-                    required
-                    type="password"
-                    placeholder="Password"
-                    value={form.password}
-                    onChange={(e) =>
-                      setForm({ ...form, password: e.target.value })
-                    }
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
-                  />
-                )}
-
-                <select
-                  required
-                  value={form.role_id}
-                  onChange={(e) =>
-                    setForm({ ...form, role_id: e.target.value })
-                  }
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
-                >
-                  <option value="">Select Role</option>
-                  {roles.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.role}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  required
-                  value={form.department_id}
-                  onChange={(e) =>
-                    setForm({ ...form, department_id: e.target.value })
-                  }
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
-                >
-                  <option value="">Select Department</option>
-                  {departments.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.department || d.name}
-                    </option>
-                  ))}
-                </select>
-
-                {editingUser && (
-                  <>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={form.is_active}
-                        onChange={(e) =>
-                          setForm({ ...form, is_active: e.target.checked })
-                        }
-                        className="w-4 h-4 text-slate-800"
-                      />
-                      <span className="text-sm text-slate-700">Active</span>
-                    </label>
-                  </>
-                )}
-
-                <div className="flex justify-end gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={closeModal}
-                    className="px-4 py-2 text-sm border rounded-lg hover:bg-slate-50"
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    type="submit"
-                    className="px-4 py-2 text-sm bg-slate-800 text-white rounded-lg hover:bg-slate-700"
-                  >
-                    {editingUser ? "Update" : "Invite"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
 
         {/* VIEW USER MODAL */}
         {viewingUser && (
@@ -553,7 +475,17 @@ export default function People() {
                   <p><strong>Joined:</strong> {new Date(viewingUser.joined_date).toLocaleDateString()}</p>
                 )}
               </div>
-              <div className="flex justify-end pt-2">
+              <div className="flex gap-3 justify-end pt-2">
+                          <button
+                            onClick={() => {
+                              setViewingUser(null);
+                              handleEdit(viewingUser);
+                            }}
+                            className="px-4 py-2 text-sm border rounded-lg hover:bg-slate-50"
+                          >
+                            Edit
+                          </button>
+
                 <button
                   onClick={() => setViewingUser(null)}
                   className="px-4 py-2 text-sm bg-slate-800 text-white rounded-lg hover:bg-slate-700"
