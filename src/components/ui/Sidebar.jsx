@@ -28,9 +28,8 @@ const allMenus = {
 };
 const superAdminMenu = {
   super_admin: [
-    { name: "Dashboard", icon: <MdOutlineTaskAlt size={20} />, path: "/dashboard" },
     { name: "People", icon: <HiOutlineUsers size={20} />, path: "/people" },
-    { name: "System Audit", icon: <FiShield  size={20} />, path: "/audit" },
+    { name: "Departments", icon: <HiOutlineOfficeBuilding size={20} />, path: "/departments" },
     { name: "Settings", icon: <HiOutlineCog size={20} />, path: "/settings" },
   ],
 };

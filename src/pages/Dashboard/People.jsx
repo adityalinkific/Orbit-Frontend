@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import toast from "react-hot-toast";
 
 
 
@@ -219,19 +220,26 @@ const sortedGroupedUsers = Object.entries(groupedUsers).sort(
   /* ============================================================
      DELETE USER
      ============================================================ */
-  const handleDelete = async (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this user?"
-    );
-    if (!confirmDelete) return;
+const handleDelete = async (id) => {
+  const confirmDelete = window.confirm(
+    "Are you sure you want to delete this user?"
+  );
+  if (!confirmDelete) return;
 
-    try {
-      await deleteUserService(id);
-      fetchUsers();
-    } catch (err) {
-      console.error("Delete failed", err);
-    }
-  };
+  try {
+    await toast.promise(deleteUserService(id), {
+      loading: "Deleting user...",
+      success: "User deleted successfully 🗑️",
+      error: (err) =>
+        err?.message || "Failed to delete user",
+    });
+
+    fetchUsers();
+  } catch (err) {
+    console.error(err);
+  }
+};
+
 
   /* ============================================================
      SUBMIT FORM (CREATE OR UPDATE)
@@ -241,7 +249,7 @@ const handleSubmit = async (e) => {
 
   const basePayload = {
     name: form.name,
-    email: form.email, // ✅ FIXED
+    email: form.email,
     role_id: Number(form.role_id),
     department_id: Number(form.department_id),
     reporting_manager_id: form.reporting_manager_id
@@ -253,27 +261,43 @@ const handleSubmit = async (e) => {
 
   try {
     if (editingUser) {
-      // 🔹 On edit, only send password if user typed one
       const updatePayload = {
         ...basePayload,
         ...(form.password ? { password: form.password } : {}),
       };
 
-      await updateUserService(editingUser.id, updatePayload);
+      await toast.promise(
+        updateUserService(editingUser.id, updatePayload),
+        {
+          loading: "Updating user...",
+          success: "User updated successfully 🎉",
+          error: (err) =>
+            err?.message || "Failed to update user",
+        }
+      );
     } else {
-      // 🔹 On create, password is required
-      await createUserService({
-        ...basePayload,
-        password: form.password,
-      });
+      await toast.promise(
+        createUserService({
+          ...basePayload,
+          password: form.password,
+        }),
+        {
+          loading: "Creating user...",
+          success: "User created successfully 🎉",
+          error: (err) =>
+            err?.message || "Failed to create user",
+        }
+      );
     }
 
     closeModal();
     fetchUsers();
   } catch (err) {
-    console.error("Error saving user", err);
+    console.error(err);
   }
 };
+
+
 
 
 
@@ -415,7 +439,7 @@ const handleSubmit = async (e) => {
                     </button>
                     
                       {dropdownUserId === u.id && (
-                        <div className="absolute right-0 mt-2 w-36 bg-white border rounded-lg shadow-lg z-20 animate-in slide-in-from-top-2 duration-200">
+                        <div className="absolute right-0 mt-2 w-36 bg-white border rounded-lg shadow-2xl z-20 animate-in slide-in-from-top-2 duration-200">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();

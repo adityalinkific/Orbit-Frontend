@@ -46,6 +46,7 @@ export default function Modal({
                 <input
                   required
                   value={form.name}
+                  placeholder="e.g. Michael Brown"
                   onChange={(e) =>
                     setForm({ ...form, name: e.target.value })
                   }
@@ -61,6 +62,7 @@ export default function Modal({
                   required
                   type="email"
                   value={form.email}
+                  placeholder="michael@company.com"
                   onChange={(e) =>
                     setForm({ ...form, email: e.target.value })
                   }
@@ -98,7 +100,7 @@ export default function Modal({
               </div>
 
               <p className="text-xs text-slate-400 mt-1">
-                Must be at least 8 characters.
+                Make your password strong.
               </p>
             </div>
 
@@ -111,80 +113,152 @@ export default function Modal({
                   Role
                 </label>
 
-                <Select.Root
-                  value={form.role_id || undefined}
-                  onValueChange={(value) =>
-                    setForm({ ...form, role_id: value })
-                  }
-                >
-                  <Select.Trigger className="mt-2 flex w-full items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-600 focus:ring-2 focus:ring-blue-100">
-                    <Select.Value placeholder="Select Role" />
-                    <Select.Icon>
-                      <ChevronDownIcon />
-                    </Select.Icon>
-                  </Select.Trigger>
+            <Select.Root
+              value={form.role_id || undefined}
+              onValueChange={(value) =>
+                setForm({ ...form, role_id: value })
+              }
+            >
+              <Select.Trigger
+                className="
+                  mt-2 flex w-full items-center justify-between
+                  rounded-xl border border-slate-200 bg-white
+                  px-4 py-3 text-sm text-slate-700
+                  shadow-sm transition
+                  hover:border-slate-300
+                  focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
+                  data-[placeholder]:text-slate-400
+                "
+              >
+                <Select.Value placeholder="Select Role" />
+                <Select.Icon className="text-slate-400">
+                  <ChevronDownIcon />
+                </Select.Icon>
+              </Select.Trigger>
 
-                  <Select.Portal>
-                    <Select.Content className="z-50 mt-2 text-slate-900 rounded-xl border bg-white shadow-xl">
-                      <Select.Viewport className="p-2">
-                        {roles.map((r) => (
-                          <Select.Item
-                            key={r.id}
-                            value={String(r.id)}
-                            className="flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-slate-100 outline-none"
-                          >
-                            <Select.ItemText>{r.role}</Select.ItemText>
-                            <Select.ItemIndicator>
-                              <CheckIcon />
-                            </Select.ItemIndicator>
-                          </Select.Item>
-                        ))}
-                      </Select.Viewport>
-                    </Select.Content>
-                  </Select.Portal>
-                </Select.Root>
-              </div>
+              <Select.Portal>
+                <Select.Content
+              position="popper"
+              sideOffset={6}
+              className="
+                z-50 w-[var(--radix-select-trigger-width)]
+                overflow-hidden rounded-xl border border-slate-200
+                bg-white shadow-xl
+              "
+            >
+                  <Select.ScrollUpButton className="flex items-center justify-center py-1 text-slate-400">
+                    ▲
+                  </Select.ScrollUpButton>
 
-              {/* DEPARTMENT */}
-              <div>
-                <label className="text-sm font-medium text-slate-700">
-                  Department
-                </label>
+                  <Select.Viewport className="p-2 max-h-60">
+                    {roles.map((r) => (
+                      <Select.Item
+                        key={r.id}
+                        value={String(r.id)}
+                        className="
+                          relative flex cursor-pointer select-none items-center
+                          rounded-lg px-3 py-2 text-sm text-slate-700
+                          outline-none transition
+                          hover:bg-slate-100
+                          focus:bg-blue-50
+                          data-[state=checked]:bg-blue-50
+                          data-[state=checked]:text-blue-600
+                        "
+                      >
+                        <Select.ItemText>{r.role}</Select.ItemText>
 
-                <Select.Root
-                  value={form.department_id || undefined}
-                  onValueChange={(value) =>
-                    setForm({ ...form, department_id: value })
-                  }
-                >
-                  <Select.Trigger className="mt-2 flex w-full items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-600 focus:ring-2 focus:ring-blue-100">
-                    <Select.Value placeholder="Select Department" />
-                    <Select.Icon>
-                      <ChevronDownIcon />
-                    </Select.Icon>
-                  </Select.Trigger>
+                        <Select.ItemIndicator className="absolute right-3">
+                          <CheckIcon className="h-4 w-4" />
+                        </Select.ItemIndicator>
+                      </Select.Item>
+                    ))}
+                  </Select.Viewport>
 
-                  <Select.Portal>
-                    <Select.Content className="z-50 mt-2 text-slate-900 rounded-xl border bg-white shadow-xl">
-                      <Select.Viewport className="p-2">
-                        {departments.map((d) => (
-                          <Select.Item
-                            key={d.id}
-                            value={String(d.id)}
-                            className="flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-slate-100 outline-none"
-                          >
-                            <Select.ItemText>
-                              {d.department || d.name}
-                            </Select.ItemText>
-                            <Select.ItemIndicator>
-                              <CheckIcon />
-                            </Select.ItemIndicator>
-                          </Select.Item>
-                        ))}
-                      </Select.Viewport>
-                    </Select.Content>
-                  </Select.Portal>
-                </Select.Root>
+                  <Select.ScrollDownButton className="flex items-center justify-center py-1 text-slate-400">
+                    ▼
+                  </Select.ScrollDownButton>
+                </Select.Content>
+              </Select.Portal>
+            </Select.Root>
+
+                          </div>
+
+                          {/* DEPARTMENT */}
+                          <div>
+                            <label className="text-sm font-medium text-slate-700">
+                              Department
+                            </label>
+
+                            <Select.Root
+              value={form.department_id || undefined}
+              onValueChange={(value) =>
+                setForm({ ...form,  department_id: value })
+              }
+            >
+              <Select.Trigger
+                className="
+                  mt-2 flex w-full items-center justify-between
+                  rounded-xl border border-slate-200 bg-white
+                  px-4 py-3 text-sm text-slate-700
+                  shadow-sm transition
+                  hover:border-slate-300
+                  focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
+                  data-[placeholder]:text-slate-400
+                "
+              >
+                <Select.Value placeholder="Select Department" />
+                <Select.Icon className="text-slate-400">
+                  <ChevronDownIcon />
+                </Select.Icon>
+              </Select.Trigger>
+
+              <Select.Portal>
+                <Select.Content
+              position="popper"
+              sideOffset={6}
+              className="
+                z-50 w-[var(--radix-select-trigger-width)]
+                overflow-hidden rounded-xl border border-slate-200
+                bg-white shadow-xl
+              "
+            >
+                  <Select.ScrollUpButton className="flex items-center justify-center py-1 text-slate-400">
+                    ▲
+                  </Select.ScrollUpButton>
+
+                  <Select.Viewport className="p-2 max-h-60">
+                    {departments.map((d) => (
+                      <Select.Item
+                        key={d.id}
+                        value={String(d.id)}
+                        className="
+                          relative flex cursor-pointer select-none items-center
+                          rounded-lg px-3 py-2 text-sm text-slate-700
+                          outline-none transition
+                          hover:bg-slate-100
+                          focus:bg-blue-50
+                          data-[state=checked]:bg-blue-50
+                          data-[state=checked]:text-blue-600
+                        "
+                      >
+                        <Select.ItemText> {d.department || d.name}</Select.ItemText>
+
+                        <Select.ItemIndicator className="absolute right-3">
+                          <CheckIcon className="h-4 w-4" />
+                        </Select.ItemIndicator>
+                      </Select.Item>
+                    ))}
+                  </Select.Viewport>
+
+                  <Select.ScrollDownButton className="flex items-center justify-center py-1 text-slate-400">
+                    ▼
+                  </Select.ScrollDownButton>
+                </Select.Content>
+              </Select.Portal>
+            </Select.Root>
+
+
+
               </div>
             </div>
 
