@@ -1,8 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import toast from "react-hot-toast";
 
-
-
 /* ---------------- USER SERVICES ---------------- */
 import {
   getAllUsersService,
@@ -25,49 +23,24 @@ import { HiDotsHorizontal } from "react-icons/hi";
 import { FiSearch, FiShield, FiUserPlus } from "react-icons/fi";
 import Modal from "../../components/common/Modal";
 
-/* ============================================================
-   PEOPLE COMPONENT
-   Responsible for:
-   - Fetching users
-   - Grouping users by role
-   - Creating users
-   - Updating users
-   - Deleting users
-   - Viewing user details
-   ============================================================ */
-
 export default function People() {
-  const { user } = useAuth(); // Current logged-in user
+  const { user } = useAuth();
 
-  /* ============================================================
-     STATE MANAGEMENT
-     ============================================================ */
+  /* ================= STATE ================= */
 
-  // All users list
   const [users, setUsers] = useState([]);
-
-  // Roles & Departments
   const [roles, setRoles] = useState([]);
   const [departments, setDepartments] = useState([]);
 
-  // Loading states
   const [loading, setLoading] = useState(false);
-  const [loadingDepartments, setLoadingDepartments] = useState(false);
-
-  // Search filter
   const [search, setSearch] = useState("");
 
-  // Dropdown control (for three-dot menu)
   const [dropdownUserId, setDropdownUserId] = useState(null);
+  const [hoveredUser, setHoveredUser] = useState(null);
 
-  // Modal states
   const [showModal, setShowModal] = useState(false);
   const [viewingUser, setViewingUser] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
-
-  /* ============================================================
-     FORM STATE (Used for Create & Edit)
-     ============================================================ */
 
   const [form, setForm] = useState({
     name: "",
@@ -77,54 +50,41 @@ export default function People() {
     department_id: "",
     reporting_manager_id: null,
     is_active: true,
-    joined_date: new Date().toISOString().split("T")[0], // Default today
+    joined_date: new Date().toISOString().split("T")[0],
   });
 
-  /* ============================================================
-     FETCH DATA FUNCTIONS
-     ============================================================ */
+  /* ================= FETCH ================= */
 
-  // Fetch all users
   const fetchUsers = async () => {
     try {
       setLoading(true);
       const res = await getAllUsersService();
       setUsers(res?.data || []);
     } catch (err) {
-      console.error("Failed to fetch users", err);
+      console.error(err);
       setUsers([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch roles
   const fetchRoles = async () => {
     try {
       const res = await rolesService();
       setRoles(Array.isArray(res) ? res : []);
     } catch (err) {
-      console.error("Failed to fetch roles:", err);
+      console.error(err);
     }
   };
 
-  // Fetch departments
   const fetchDepartments = async () => {
     try {
-      setLoadingDepartments(true);
-      const data = await departmentsService();
-      setDepartments(Array.isArray(data) ? data : []);
+      const res = await departmentsService();
+      setDepartments(Array.isArray(res) ? res : []);
     } catch (err) {
-      console.error("Failed to fetch departments:", err);
-    } finally {
-      setLoadingDepartments(false);
+      console.error(err);
     }
   };
-
-  /* ============================================================
-     INITIAL LOAD
-     Runs once when component mounts
-     ============================================================ */
 
   useEffect(() => {
     fetchUsers();
@@ -132,75 +92,44 @@ export default function People() {
     fetchDepartments();
   }, []);
 
-  /* ============================================================
-     CLOSE DROPDOWN WHEN CLICKING OUTSIDE
-     ============================================================ */
-
   useEffect(() => {
-    const handleClickOutside = () => {
-      setDropdownUserId(null);
-    };
-
-    document.addEventListener("click", handleClickOutside);
-    return () => {
-      document.removeEventListener("click", handleClickOutside);
-    };
+    const close = () => setDropdownUserId(null);
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
   }, []);
 
-  /* ============================================================
-     GROUP USERS BY ROLE (Memoized for performance)
-     ============================================================ */
+  /* ================= GROUP USERS ================= */
 
-const groupedUsers = useMemo(() => {
-  const filtered = users.filter((u) =>
-    u.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const groupedUsers = useMemo(() => {
+    const filtered = users.filter((u) =>
+      u.name?.toLowerCase().includes(search.toLowerCase())
+    );
 
-  const groups = {};
+    const groups = {};
+    filtered.forEach((u) => {
+      const roleName = u.role?.role?.toUpperCase() || "OTHERS";
+      if (!groups[roleName]) groups[roleName] = [];
+      groups[roleName].push(u);
+    });
 
-  filtered.forEach((u) => {
-    const roleName = u.role?.role?.toUpperCase() || "OTHERS";
-    if (!groups[roleName]) groups[roleName] = [];
-    groups[roleName].push(u);
-  });
+    return groups;
+  }, [users, search]);
 
-  return groups;
-}, [users, search]);
-
-
-const rolePriority = {
-  "SUPER_ADMIN": 1,
-  "ADMIN": 2,
-  "EMPLOYEE": 3,
-};
-
-const sortedGroupedUsers = Object.entries(groupedUsers).sort(
-  ([roleA], [roleB]) => {
-    const normalizedA = roleA.trim().toUpperCase();
-    const normalizedB = roleB.trim().toUpperCase();
-
-    const priorityA = rolePriority[normalizedA] ?? 99;
-    const priorityB = rolePriority[normalizedB] ?? 99;
-
-    return priorityA - priorityB;
-  }
-);
-
-
-
-  /* ============================================================
-     VIEW USER DETAILS
-     ============================================================ */
-  const handleView = (user) => {
-    setViewingUser(user);
+  const rolePriority = {
+    SUPER_ADMIN: 1,
+    ADMIN: 2,
+    EMPLOYEE: 3,
   };
 
-  /* ============================================================
-     EDIT USER (Prefill form with existing values)
-     ============================================================ */
+  const sortedGroupedUsers = Object.entries(groupedUsers).sort(
+    ([a], [b]) =>
+      (rolePriority[a] ?? 99) - (rolePriority[b] ?? 99)
+  );
+
+  /* ================= ACTIONS ================= */
+
   const handleEdit = (user) => {
     setEditingUser(user);
-
     setForm({
       name: user.name,
       email: user.email,
@@ -213,66 +142,46 @@ const sortedGroupedUsers = Object.entries(groupedUsers).sort(
         ? user.joined_date.split("T")[0]
         : new Date().toISOString().split("T")[0],
     });
-
     setShowModal(true);
   };
 
-  /* ============================================================
-     DELETE USER
-     ============================================================ */
-const handleDelete = async (id) => {
-  const confirmDelete = window.confirm(
-    "Are you sure you want to delete this user?"
-  );
-  if (!confirmDelete) return;
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this user?")) return;
 
-  try {
     await toast.promise(deleteUserService(id), {
       loading: "Deleting user...",
-      success: "User deleted successfully 🗑️",
-      error: (err) =>
-        err?.message || "Failed to delete user",
+      success: "User deleted successfully",
+      error: "Failed to delete user",
     });
 
     fetchUsers();
-  } catch (err) {
-    console.error(err);
-  }
-};
-
-
-  /* ============================================================
-     SUBMIT FORM (CREATE OR UPDATE)
-     ============================================================ */
-const handleSubmit = async (e) => {
-  e.preventDefault();
-
-  const basePayload = {
-    name: form.name,
-    email: form.email,
-    role_id: Number(form.role_id),
-    department_id: Number(form.department_id),
-    reporting_manager_id: form.reporting_manager_id
-      ? Number(form.reporting_manager_id)
-      : null,
-    is_active: form.is_active,
-    joined_date: form.joined_date,
   };
 
-  try {
-    if (editingUser) {
-      const updatePayload = {
-        ...basePayload,
-        ...(form.password ? { password: form.password } : {}),
-      };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
+    const basePayload = {
+      name: form.name,
+      email: form.email,
+      role_id: Number(form.role_id),
+      department_id: Number(form.department_id),
+      reporting_manager_id: form.reporting_manager_id
+        ? Number(form.reporting_manager_id)
+        : null,
+      is_active: form.is_active,
+      joined_date: form.joined_date,
+    };
+
+    if (editingUser) {
       await toast.promise(
-        updateUserService(editingUser.id, updatePayload),
+        updateUserService(editingUser.id, {
+          ...basePayload,
+          ...(form.password ? { password: form.password } : {}),
+        }),
         {
           loading: "Updating user...",
-          success: "User updated successfully 🎉",
-          error: (err) =>
-            err?.message || "Failed to update user",
+          success: "User updated successfully",
+          error: "Failed to update user",
         }
       );
     } else {
@@ -283,71 +192,36 @@ const handleSubmit = async (e) => {
         }),
         {
           loading: "Creating user...",
-          success: "User created successfully 🎉",
-          error: (err) =>
-            err?.message || "Failed to create user",
+          success: "User created successfully",
+          error: "Failed to create user",
         }
       );
     }
 
     closeModal();
     fetchUsers();
-  } catch (err) {
-    console.error(err);
-  }
-};
+  };
 
-
-
-
-
-
-
-  /* ============================================================
-     RESET FORM + CLOSE MODALS
-     ============================================================ */
   const closeModal = () => {
     setShowModal(false);
     setEditingUser(null);
     setViewingUser(null);
-
-    setForm({
-      name: "",
-      email: "",
-      password: "",
-      role_id: "",
-      department_id: "",
-      reporting_manager_id: null,
-      is_active: true,
-      joined_date: new Date().toISOString().split("T")[0],
-    });
   };
 
-  /* ============================================================
-     HELPER FUNCTIONS
-     ============================================================ */
-
-  // Get initials for avatar circle
   const getInitials = (name) =>
-    name
-      ?.split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
+    name?.split(" ").map((n) => n[0]).join("").toUpperCase();
 
-  // Active / Inactive indicator color
-  const statusColor = (isActive) =>
-    isActive ? "bg-green-500" : "bg-gray-400";
+  const statusColor = (active) =>
+    active ? "bg-green-500" : "bg-gray-400";
 
-  /* ============================================================
-     UI RENDER
-     ============================================================ */
+  /* ================= UI ================= */
+
   return (
-    <div className="bg-slate-100 min-h-screen p-10">
+    <div className="bg-slate-100 min-h-screen px-25 py-10 pb-40">
       <div className="max-w-7xl mx-auto space-y-10">
 
         {/* HEADER */}
-        <div className="flex justify-between items-start mb-10">
+        <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-semibold text-slate-900">
               People
@@ -357,26 +231,39 @@ const handleSubmit = async (e) => {
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
-            {/* Search */}
+          <div className="flex gap-4 items-center">
             <div className="relative">
               <FiSearch className="absolute left-3 top-3 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search people..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-72 pl-10 pr-4 py-2 text-slate-600 rounded-lg border border-slate-300 text-sm"
-              />
+                <input
+                  type="text"
+                  placeholder="Search people..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="
+                    w-72
+                    pl-10 pr-4 py-2.5
+                    text-sm text-slate-700
+                    bg-slate-100
+                    border border-transparent
+                    rounded-lg
+                    outline-none
+                    transition
+                    duration-200
+                    focus:bg-white
+                    focus:border-slate-300
+                    focus:ring-2
+                    focus:ring-slate-200
+                  "
+                />
+
             </div>
 
-            {/* Invite */}
             <button
               onClick={() => {
                 setEditingUser(null);
                 setShowModal(true);
               }}
-              className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-700 transition"
+              className="flex items-center gap-2 bg-[#1d3658] text-white px-4 py-2 rounded-md text-sm"
             >
               <FiUserPlus size={16} />
               Create
@@ -385,147 +272,150 @@ const handleSubmit = async (e) => {
         </div>
 
         {/* CONTENT */}
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <div className="w-6 h-6 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        ) : (
-          sortedGroupedUsers.map(([roleName, roleUsers]) => (
-            <div key={roleName} className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-600 uppercase">
-                <FiShield className="w-4 h-4" />
-                {roleName} ({roleUsers.length})
-              </div>
+        {sortedGroupedUsers.map(([roleName, roleUsers]) => (
+          <div key={roleName} className="space-y-4  pr-65">
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-600 uppercase">
+              <FiShield className="w-4 h-4" />
+              {roleName} ({roleUsers.length})
+            </div>
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {roleUsers.map((u) => (
-                  <div
-                    key={u.id}
-                    className="bg-white rounded-xl border-gray-200 shadow-md  p-6 flex justify-between"
-                  >
-                    <div className="flex gap-4">
-                      <div className="relative">
-                        <div className="w-14 h-14 rounded-full bg-slate-500 text-white flex items-center justify-center font-semibold">
-                          {getInitials(u.name)}
-                        </div>
-                        <span
-                          className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white ${statusColor(
-                            u.is_active
-                          )}`}
-                        ></span>
+            <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-6">
+              {roleUsers.map((u) => (
+                <div
+                  key={u.id}
+                  onMouseEnter={() => setHoveredUser(u)}
+                  onMouseLeave={() => setHoveredUser(null)}
+                  className="relative bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition duration-200 p-6 flex justify-between"
+                >
+                  <div className="flex gap-4">
+                    <div className="relative">
+                      <div className="w-14 h-14 rounded-full bg-[#4b799b] text-white flex items-center justify-center font-semibold">
+                        {getInitials(u.name)}
                       </div>
-
-                      <div>
-                        <h3 className="font-semibold text-slate-900">{u.name}</h3>
-                        <p className="text-sm text-slate-500">
-                          {u.email}
-                        </p>
-                        <p className="text-sm text-slate-400">
-                          {u.department?.department || "—"}
-                        </p>
-                      </div>
+                      <span
+                        className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white ${statusColor(
+                          u.is_active
+                        )}`}
+                      />
                     </div>
 
+                    <div>
+                      <h3 className="font-semibold text-slate-900">
+                        {u.name}
+                      </h3>
+                      <p className="text-sm text-slate-500">
+                        {u.email}
+                      </p>
+                      <p className="text-sm text-slate-400">
+                        {u.department?.department || "—"}
+                      </p>
+                    </div>
+                  </div>
 
+                  {/* MENU */}
                   <div className="relative">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setDropdownUserId(dropdownUserId === u.id ? null : u.id);
+                        setDropdownUserId(
+                          dropdownUserId === u.id ? null : u.id
+                        );
                       }}
-                      className="p-1.5 rounded-lg hover:bg-slate-100 transition"
+                      className="p-1.5 hover:bg-[#4299da] text-slate-600 hover:text-white rounded-lg"
                     >
-                      <HiDotsHorizontal size={20} className="text-slate-500" />
+                      <HiDotsHorizontal  size={20} />
                     </button>
-                    
-                      {dropdownUserId === u.id && (
-                        <div className="absolute right-0 mt-2 w-36 bg-white border rounded-lg shadow-2xl z-20 animate-in slide-in-from-top-2 duration-200">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleView(u);
-                            }}
-                            className="block text-slate-900 w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 first:rounded-t-lg last:rounded-b-lg transition-colors"
-                          >
-                            View
-                          </button>
-                          
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(u.id);
-                            }}
-                            className="block w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 first:rounded-t-lg last:rounded-b-lg transition-colors"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
 
+                    {dropdownUserId === u.id && (
+                      <div className="absolute right-0 mt-2 w-40 bg-white border rounded-xl shadow-xl z-20">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(u);
+                          }}
+                          className="block text-slate-800 w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50"
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(u.id);
+                          }}
+                          className="block w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            </div>
-          ))
-        )}
 
-        {/* CREATE / EDIT MODAL */}
-            <Modal
-              open={showModal}
-              onOpenChange={(value) => {
-                if (!value) {
-                  closeModal();
-                } else {
-                  setShowModal(true);
-                }
-              }}
-              editingUser={editingUser}
-              form={form}
-              setForm={setForm}
-              roles={roles}
-              departments={departments}
-              onSubmit={handleSubmit}
-            />
+                  {/* HOVER PREVIEW */}
+                  {hoveredUser?.id === u.id && (
+                    <div className="absolute text-slate-900 top-6 left-full ml-4 w-72 bg-white rounded-xl shadow-2xl border border-slate-200 p-5 z-50 animate-in fade-in duration-200">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="relative">
+                          <div className="w-12 h-12 rounded-full bg-[#4b799b] text-white flex items-center justify-center font-semibold text-sm">
+                            {getInitials(u.name)}
+                          </div>
+                          <span
+                            className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${statusColor(
+                              u.is_active
+                            )}`}
+                          />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-sm">
+                            {u.name}
+                          </h4>
+                          <span className="inline-block mt-1 px-2 py-0.5 text-xs bg-slate-100 rounded-full">
+                            {u.role?.role}
+                          </span>
+                        </div>
+                      </div>
 
-
-
-        {/* VIEW USER MODAL */}
-        {viewingUser && (
-          <div className="fixed inset-0 bg-black/40 text-slate-800 flex items-center justify-center z-50 p-4">
-            <div className="bg-white w-full max-w-md rounded-xl p-6 space-y-4 shadow-lg">
-              <h2 className="text-lg font-semibold">User Details</h2>
-              <div className="space-y-3 text-sm">
-                <p><strong>Name:</strong> {viewingUser.name}</p>
-                <p><strong>Email:</strong> {viewingUser.email}</p>
-                <p><strong>Role:</strong> {viewingUser.role?.role || "N/A"}</p>
-                <p><strong>Department:</strong> {viewingUser.department?.department || viewingUser.department?.name || "N/A"}</p>
-                <p><strong>Status:</strong> {viewingUser.is_active ? "Active" : "Inactive"}</p>
-                {viewingUser.joined_date && (
-                  <p><strong>Joined:</strong> {new Date(viewingUser.joined_date).toLocaleDateString()}</p>
-                )}
-              </div>
-              <div className="flex gap-3 justify-end pt-2">
-                          <button
-                            onClick={() => {
-                              setViewingUser(null);
-                              handleEdit(viewingUser);
-                            }}
-                            className="px-4 py-2 text-sm border rounded-lg hover:bg-slate-50"
-                          >
-                            Edit
-                          </button>
-
-                <button
-                  onClick={() => setViewingUser(null)}
-                  className="px-4 py-2 text-sm bg-slate-800 text-white rounded-lg hover:bg-slate-700"
-                >
-                  Close
-                </button>
-              </div>
+                      <div className="space-y-2 text-xs text-slate-600 mb-4">
+                        <p><strong>Email:</strong> {u.email}</p>
+                        <p><strong>Department:</strong> {u.department?.department || "—"}</p>
+                        <p><strong>Manager:</strong> {u.reporting_manager?.name || "—"}</p>
+                        <p>
+                          <strong>Joined:</strong>{" "}
+                          {u.joined_date
+                            ? new Date(u.joined_date).toLocaleDateString()
+                            : "—"}
+                        </p>
+                      </div>
+                      <div className="border-t border-slate-300 pt-3 text-xs space-y-1">
+                            <div>
+                              <h3 className="text-base font-semibold">Quick Stats</h3>
+                            </div>
+                        <p><strong>Assigned:</strong> {u.assigned_tasks || 0}</p>
+                        <p><strong>Completed:</strong> {u.completed_tasks || 0}</p>
+                        <p className="text-red-500">
+                          <strong>Overdue:</strong> {u.overdue_tasks || 0}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
-        )}
+        ))}
+
+        {/* MODAL */}
+        <Modal
+          open={showModal}
+          onOpenChange={(v) => (!v ? closeModal() : setShowModal(true))}
+          editingUser={editingUser}
+          form={form}
+          setForm={setForm}
+          roles={roles}
+          departments={departments}
+          onSubmit={handleSubmit}
+        />
+
       </div>
     </div>
   );
