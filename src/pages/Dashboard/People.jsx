@@ -217,7 +217,7 @@ export default function People() {
   /* ================= UI ================= */
 
   return (
-    <div className="bg-slate-100 min-h-screen px-25 py-10 pb-40">
+    <div className="bg-slate-100 min-h-screen px-25 py-10 pb-50">
       <div className="max-w-7xl mx-auto space-y-10">
 
         {/* HEADER */}
