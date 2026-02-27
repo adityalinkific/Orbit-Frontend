@@ -1,5 +1,8 @@
 import * as Dialog from "@radix-ui/react-dialog"
 import * as Switch from "@radix-ui/react-switch"
+import * as Select from "@radix-ui/react-select"
+import { ChevronDown, Check } from "lucide-react"
+
 import { X } from "lucide-react"
 import { useEffect } from "react"
 
@@ -106,21 +109,61 @@ const DepartmentModal = ({
               <label className="mb-1 block text-sm font-medium text-gray-900">
                 Department Head
               </label>
-              <select
-                value={form.head_id || ""}
-                onChange={(e) =>
-                  setForm({ ...form, head_id: e.target.value })
+
+              <Select.Root
+                value={
+                  form.department_head_id !== null
+                    ? String(form.department_head_id)
+                    : undefined
                 }
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                onValueChange={(value) =>
+                  setForm({
+                    ...form,
+                    department_head_id: Number(value),
+                  })
+                }
               >
-                <option value="">Select a user</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name}
-                  </option>
-                ))}
-              </select>
+                <Select.Trigger
+                  className="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition
+                            focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                >
+                  <Select.Value placeholder="Select a user" />
+                  <Select.Icon className="text-gray-400">
+                    <ChevronDown size={16} />
+                  </Select.Icon>
+                </Select.Trigger>
+
+                <Select.Portal>
+                  <Select.Content
+                    position="popper"
+                    sideOffset={6}
+                    className="z-50 max-h-60 w-[--radix-select-trigger-width] overflow-hidden
+                              rounded-lg border border-gray-200 bg-white shadow-xl"
+                  >
+                    <Select.Viewport className="p-1">
+                      {users.map((u) => (
+                        <Select.Item
+                          key={u.id}
+                          value={String(u.id)}   // ✅ MUST be non-empty
+                          className="relative flex cursor-pointer select-none items-center justify-between
+                                    rounded-md px-3 py-2 text-sm text-gray-900 outline-none
+                                    data-[highlighted]:bg-gray-100"
+                        >
+                          <Select.ItemText>{u.name}</Select.ItemText>
+
+                          <Select.ItemIndicator className="text-blue-600">
+                            <Check size={14} />
+                          </Select.ItemIndicator>
+                        </Select.Item>
+                      ))}
+                    </Select.Viewport>
+                  </Select.Content>
+                </Select.Portal>
+              </Select.Root>
             </div>
+
+
+
 
             {/* Status */}
             <div className="flex items-center justify-between pt-1">

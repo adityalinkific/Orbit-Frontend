@@ -1,47 +1,74 @@
-import API from "./api";
-
+import api from "./api"
+import axios from "axios";
 /* ---------------- GET ALL DEPARTMENTS ---------------- */
 export const getDepartments = async () => {
-  const response = await API.get("/departments/");
-  return response.data;
+  const res = await api.get("/departments");
+
+  // backend returns { status, message, data }
+  if (!Array.isArray(res.data.data)) {
+    throw new Error("Response validation failed");
+  }
+
+  return res.data.data;
 };
 
 /* ---------------- CREATE DEPARTMENT ---------------- */
-export const createDepartment = async (data) => {
-  try {
-    const response = await API.post("/departments/", data);
-    return response;
-  } catch (error) {
-    if (error.response?.status === 409) {
-      console.error("🛑 SERVER DUPLICATE DETECTED:", error.response.data);
-      throw error; // Let handleSubmit catch it
-    }
-    throw error;
-  }
-};
+export const createDepartment = async (payload) => {
+  const res = await api.post("/departments", payload);
 
+  if (!res.data?.data) {
+    throw new Error("Response validation failed");
+  }
+
+  return res.data.data;
+};
 
 /* ---------------- GET SINGLE DEPARTMENT ---------------- */
 export const getDepartmentById = async (id) => {
-  const response = await API.get(
-    `/departments/department-detail/${id}`
-  );
-  return response.data;
+  const res = await api.get(`/departments/${id}`);
+
+  if (!res.data?.data) {
+    throw new Error("Response validation failed");
+  }
+
+  return res.data.data;
 };
 
 /* ---------------- UPDATE DEPARTMENT ---------------- */
-export const updateDepartment = async (id, data) => {
-  const response = await API.put(
+export const updateDepartment = async (id, payload) => {
+  const res = await api.put(
     `/departments/update-department/${id}`,
-    data
-  );
-  return response.data;
-};
+    {
+      name: payload.name,
+      description: payload.description,
+      department_head_id:
+        typeof payload.department_head_id === "number"
+          ? payload.department_head_id
+          : null,
+    }
+  )
+
+  return res.data.data
+}
+
 
 /* ---------------- DELETE DEPARTMENT ---------------- */
 export const deleteDepartment = async (id) => {
-  const response = await API.delete(
-    `/departments/delete-department/${id}`
+  const res = await api.delete(`/departments/delete-department/${id}`);
+  return res.data.data;
+};
+
+/* ---------------- GET DEPARTMENT MEMBERS ---------------- */
+export const getDepartmentMembers = async (departmentId) => {
+  const res = await axios.get("/api/v1/user/all-users");
+
+  const users = Array.isArray(res?.data?.data)
+    ? res.data.data
+    : [];
+
+  const members = users.filter(
+    (user) => user.department_id === departmentId
   );
-  return response.data;
+
+  return members;
 };
