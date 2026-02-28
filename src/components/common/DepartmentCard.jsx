@@ -81,7 +81,7 @@ const DepartmentCard = ({ department, onEdit, onDelete, onClick }) => {
       <div className="space-y-3 text-sm text-gray-600">
         <div className="flex items-center gap-2">
           <Users size={16} />
-          {department.member_count} members
+          {department.total_members ?? department.members?.length ?? 0} members
         </div>
 
         {department.department_head_name ? (
