@@ -57,7 +57,7 @@ export default function Login() {
       <div className="orbit-auth-left">
         <div className="orbit-brand">
           <div className="orbit-logo-card">
-            <img src="public/assets/icons/orbit-icon.svg" alt="Orbit Logo" />
+            <img src="assets/icons/orbit-icon.svg" alt="Orbit Logo" />
           </div>
           <span>Orbit</span>
         </div>

@@ -11,7 +11,7 @@ export default function Navbar() {
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 font-bold">
           <img
-            src="public/assets/icons/orbit-icon.svg"
+            src="assets/icons/orbit-icon.svg"
             alt="Orbit Logo"
             className="w-[42px] h-[42px] object-contain"
           />
