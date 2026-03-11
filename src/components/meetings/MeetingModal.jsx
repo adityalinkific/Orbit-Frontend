@@ -1,9 +1,12 @@
 import * as Dialog from "@radix-ui/react-dialog"
 import * as Switch from "@radix-ui/react-switch"
-import { X } from "lucide-react"
+import { X, Check } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+
+import { getAllUsersService } from "../../services/user.service"
 
 const inputClass =
-  "mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+  "mt-1 w-full bg-[#f8fafc] rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition appearance-none"
 
 const MeetingModal = ({
   open,
@@ -14,9 +17,74 @@ const MeetingModal = ({
   isSubmitting = false,
   mode = "create",
 }) => {
+
+  const [users, setUsers] = useState([])
+  const [search, setSearch] = useState("")
+
+
   const updateField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }))
   }
+
+  /* ---------------- FETCH USERS ---------------- */
+useEffect(() => {
+  const fetchUsers = async () => {
+    try {
+      const res = await getAllUsersService()
+
+      // API returns { status, message, data }
+      setUsers(res?.data || [])
+
+    } catch (err) {
+      console.error("Failed to fetch users", err)
+    }
+  }
+
+  if (open) fetchUsers()
+}, [open])
+
+
+  /* ---------------- ORGANIZERS ---------------- */
+const organizers = users.filter((u) =>
+  ["admin", "superadmin", "manager"].includes(
+    u.role?.role?.toLowerCase()
+  )
+)
+
+const filteredUsers = useMemo(() => {
+  return users.filter((u) =>
+    u.name.toLowerCase().includes(search.toLowerCase())
+  )
+}, [users, search])
+
+
+const toggleAttendee = (user) => {
+  setForm((prev) => {
+    const attendees = prev.attendees || []
+
+    const exists = attendees.some((u) => u.id === user.id)
+
+    return {
+      ...prev,
+      attendees: exists
+        ? attendees.filter((u) => u.id !== user.id)
+        : [...attendees, user],
+    }
+  })
+}
+
+const getInitials = (name = "") => {
+  const parts = name.trim().split(" ")
+
+  if (parts.length === 1) {
+    return parts[0][0]?.toUpperCase()
+  }
+
+  return (parts[0][0] + parts[1][0]).toUpperCase()
+}
+
+
+
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -94,17 +162,34 @@ const MeetingModal = ({
                   Organizer
                 </label>
 
-                <select
-                  value={form.organizer}
-                  onChange={(e) =>
-                    updateField("organizer", e.target.value)
-                  }
-                  className={inputClass}
-                >
-                  <option>Alex Rivera</option>
-                  <option>Sarah Chen</option>
-                  <option>Mike Ross</option>
-                </select>
+                <div className="relative mt-1">
+                  <select
+                    value={form.organizer}
+                    onChange={(e) => updateField("organizer", e.target.value)}
+                    className={`${inputClass} pr-10`}
+                  >
+                    <option value="">Select Organizer</option>
+
+                    {organizers.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.name} ({user.role?.role})
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Arrow */}
+                  <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </div>
+                </div>
               </div>
 
               {/* Project */}
@@ -217,20 +302,90 @@ const MeetingModal = ({
               </div>
 
               {/* ATTENDEES */}
-              <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Attendees
-                </label>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">
+                    Attendees
+                  </label>
 
-                <input
-                  placeholder="Add attendees..."
-                  value={form.attendees}
-                  onChange={(e) =>
-                    updateField("attendees", e.target.value)
-                  }
-                  className={inputClass}
-                />
-              </div>
+                  {/* Selected users */}
+                  {form.attendees?.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2 mb-2">
+                      {form.attendees.map((user) => (
+                        <span
+                          key={user.id}
+                          className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full text-xs"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="h-5 w-5 flex items-center justify-center rounded-full bg-[#4b8fe2] text-white text-[10px] font-semibold">
+                              {getInitials(user.name)}
+                            </div>
+
+                            <span>{user.name}</span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => toggleAttendee(user)}
+                            className="text-gray-500 hover:text-red-500"
+                          >
+                            <X size={12} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Search */}
+                  <input
+                    placeholder="Search users..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full mb-2 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+
+                  {/* Users list */}
+                  <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-[#e0e0e0]">
+
+                    {filteredUsers.map((user) => {
+                      const active = form.attendees?.some((u) => u.id === user.id)
+
+                      return (
+                        <button
+                          key={user.id}
+                          type="button"
+                          onClick={() => toggleAttendee(user)}
+                          className={`w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-gray-50
+                          ${active ? "bg-blue-50" : ""}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="h-6 w-6 flex items-center justify-center rounded-full bg-[#4b8fe2] text-white text-[10px] font-semibold">
+                              {getInitials(user.name)}
+                            </div>
+
+                            <span>
+                              {user.name}
+                              <span className="text-xs text-gray-400 ml-1">
+                                ({user.role?.role})
+                              </span>
+                            </span>
+                          </div>
+
+
+                          {active && <Check size={16} className="text-blue-600" />}
+                        </button>
+                      )
+                    })}
+
+                    {filteredUsers.length === 0 && (
+                      <div className="p-3 text-sm text-gray-500 text-center">
+                        No users found
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+
+
             </div>
 
             {/* FOOTER */}

@@ -43,23 +43,30 @@ const [form, setForm] = useState({
   date: "",
   startTime: "09:00",
   endTime: "10:00",
-  organizer: "Alex Rivera",
+  organizer: "",
   project: "Internal Ops",
-  attendees: "",
+  attendees: [], 
   sendInvite: true,
   generateLink: true,
 })
 
 
+
   const resetForm = () => {
-    setForm({
-      title: "",
-      date: "",
-      time: "",
-      description: "",
-      link: "",
-    })
-  }
+  setForm({
+    title: "",
+    description: "",
+    date: "",
+    startTime: "09:00",
+    endTime: "10:00",
+    organizer: "",
+    project: "Internal Ops",
+    attendees: [], 
+    sendInvite: true,
+    generateLink: true,
+  })
+}
+
 
 const handleDateClick = (dateStr, timeRange) => {
   setForm({
@@ -71,7 +78,7 @@ const handleDateClick = (dateStr, timeRange) => {
     endTime: timeRange?.endTime || "10:00",
     organizer: "Alex Rivera",
     project: "Internal Ops",
-    attendees: "",
+    attendees: [],
     sendInvite: true,
     generateLink: true,
   })

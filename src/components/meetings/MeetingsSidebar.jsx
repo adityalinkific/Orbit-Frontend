@@ -16,7 +16,7 @@ const MeetingsSidebar = ({ meetings }) => {
 
       {/* Header */}
       <div className="p-6">
-        <h2 className="text-xl font-semibold text-gray-900">Meetings</h2>
+        <h2 className="text-xl font-medium text-gray-900">Meetings</h2>
         <p className="text-sm text-gray-500 mt-1">
           Manage your professional schedule and recordings
         </p>
@@ -24,12 +24,15 @@ const MeetingsSidebar = ({ meetings }) => {
 
       {/* Tabs */}
       <div className="px-6 py-4 flex gap-2">
+
+        <div className="shadow-md rounded-md bg-[#f1f5f9]">
+
         <button
           onClick={() => setTab("upcoming")}
-          className={`px-4 py-1.5 text-sm rounded-md ${
+          className={`px-4 py-1.5 text-sm rounded-md font-medium ${
             tab === "upcoming"
-              ? "bg-gray-100 text-gray-900"
-              : "text-gray-500"
+              ? "bg-[#ffffff] text-gray-900"
+              : "text-gray-600"
           }`}
         >
           Upcoming
@@ -37,14 +40,16 @@ const MeetingsSidebar = ({ meetings }) => {
 
         <button
           onClick={() => setTab("completed")}
-          className={`px-4 py-1.5 text-sm rounded-md ${
+          className={`px-4 py-1.5 text-sm rounded-md font-medium ${
             tab === "completed"
-              ? "bg-gray-100 text-gray-900"
-              : "text-gray-500"
+              ? "bg-[#ffffff] text-gray-900"
+              : "text-gray-600"
           }`}
         >
           Completed
         </button>
+        </div>
+
       </div>
 
       {/* Today label */}
@@ -61,7 +66,7 @@ const MeetingsSidebar = ({ meetings }) => {
           return (
             <div
               key={meeting.id}
-              className="border border-[#e0e0e0] rounded-lg p-4 hover:shadow-md transition bg-white"
+              className="border border-[#e0e0e0] rounded-lg p-4 hover:shadow-md hover:border-[#005fff]  transition bg-white"
             >
               <div className="flex justify-between items-center">
                 <h4 className="font-medium text-gray-900">

@@ -429,7 +429,7 @@ const Calendar = ({
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col h-full">
       {/* Header */}
       <div className="p-4 sm:px-6 flex items-center justify-between border-b border-gray-100 bg-white">
-        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2.5">
+        <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2.5">
           <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
             <CalendarIcon className="w-5 h-5" />
           </div>
