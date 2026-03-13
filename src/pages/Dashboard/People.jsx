@@ -269,7 +269,7 @@ const handleEdit = (user) => {
                 setEditingUser(null);
                 setShowModal(true);
               }}
-              className="flex items-center gap-2 bg-[#1d3658] text-white px-4 py-2 rounded-md text-sm"
+              className="flex cursor-pointer items-center gap-2 bg-[#1d3658] text-white px-4 py-2 rounded-md text-sm"
             >
               <FiUserPlus size={16} />
               Create
@@ -327,7 +327,7 @@ const handleEdit = (user) => {
                           dropdownUserId === u.id ? null : u.id
                         );
                       }}
-                      className="p-1.5 hover:bg-[#4299da] text-slate-600 hover:text-white rounded-lg"
+                      className="p-1.5 cursor-pointer hover:bg-[#4299da] text-slate-600 hover:text-white rounded-lg"
                     >
                       <HiDotsHorizontal  size={20} />
                     </button>
@@ -339,7 +339,7 @@ const handleEdit = (user) => {
                             e.stopPropagation();
                             handleEdit(u);
                           }}
-                          className="block text-slate-800 w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50"
+                          className="block cursor-pointer text-slate-800 w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50"
                         >
                           Edit
                         </button>
@@ -349,7 +349,7 @@ const handleEdit = (user) => {
                             e.stopPropagation();
                             handleDelete(u.id);
                           }}
-                          className="block w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50"
+                          className="block cursor-pointer w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50"
                         >
                           Delete
                         </button>

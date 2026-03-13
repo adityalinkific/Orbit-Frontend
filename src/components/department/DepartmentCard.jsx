@@ -20,7 +20,7 @@ const DepartmentCard = ({ department, onEdit, onDelete, onClick }) => {
             <button
               type="button"
               onClick={(e) => e.stopPropagation()}
-              className="invisible rounded-lg p-1 text-gray-400 hover:bg-gray-100 group-hover:visible"
+              className="invisible cursor-pointer rounded-lg p-1 text-gray-400 hover:bg-gray-100 group-hover:visible"
             >
               <MoreVertical size={18} />
             </button>

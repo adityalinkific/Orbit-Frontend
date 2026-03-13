@@ -16,7 +16,7 @@ const MeetingsSidebar = ({ meetings, onMeetingClick }) => {
 
       {/* Header */}
       <div className="p-6">
-        <h2 className="text-xl font-medium text-gray-900">Meetings</h2>
+        <h2 className="text-2xl font-semibold text-slate-900 mb-1">Meetings</h2>
         <p className="text-sm text-gray-500 mt-1">
           Manage your professional schedule and recordings
         </p>
@@ -29,7 +29,7 @@ const MeetingsSidebar = ({ meetings, onMeetingClick }) => {
 
         <button
           onClick={() => setTab("upcoming")}
-          className={`px-4 py-1.5 text-sm rounded-md font-medium ${
+          className={`px-4 py-1.5 text-sm rounded-sm font-medium ${
             tab === "upcoming"
               ? "bg-[#ffffff] text-gray-900"
               : "text-gray-600"
@@ -40,7 +40,7 @@ const MeetingsSidebar = ({ meetings, onMeetingClick }) => {
 
         <button
           onClick={() => setTab("completed")}
-          className={`px-4 py-1.5 text-sm rounded-md font-medium ${
+          className={`px-4 py-1.5 text-sm rounded-sm font-medium ${
             tab === "completed"
               ? "bg-[#ffffff] text-gray-900"
               : "text-gray-600"
@@ -61,7 +61,19 @@ const MeetingsSidebar = ({ meetings, onMeetingClick }) => {
       <div className="p-6 pt-3 space-y-4">
         {data.map(meeting => {
 
-          const isLive = meeting.date === today
+          const now = new Date()
+
+            const start = new Date(`${meeting.date}T${meeting.startTime}`)
+            const end = new Date(`${meeting.date}T${meeting.endTime}`)
+
+            let status = "scheduled"
+
+            if (now >= start && now <= end) {
+              status = "live"
+            } else if (now > end) {
+              status = "completed"
+            }
+
 
           return (
             <div
@@ -76,14 +88,17 @@ const MeetingsSidebar = ({ meetings, onMeetingClick }) => {
                 </h4>
 
                 <span
-                  className={`text-xs px-2 py-0.5 rounded ${
-                    isLive
-                      ? "bg-blue-100 text-blue-600"
-                      : "bg-gray-100 text-gray-600"
-                  }`}
-                >
-                  {isLive ? "LIVE" : "SCHEDULED"}
-                </span>
+                className={`text-xs px-2 py-0.5 rounded font-medium ${
+                  status === "live"
+                    ? "bg-green-100 text-green-700"
+                    : status === "completed"
+                    ? "bg-gray-100 text-gray-600"
+                    : "bg-blue-100 text-blue-700"
+                }`}
+              >
+                {status.toUpperCase()}
+              </span>
+
               </div>
 
               <div className="flex items-center gap-1 text-sm text-gray-500 mt-2">
@@ -113,7 +128,7 @@ const MeetingsSidebar = ({ meetings, onMeetingClick }) => {
                   )}
                 </div>
 
-                {isLive && (
+                {status === "live" && (
                   <button className="bg-blue-600 text-white text-sm px-3 py-1.5 rounded-md hover:bg-blue-700">
                     Join Now
                   </button>

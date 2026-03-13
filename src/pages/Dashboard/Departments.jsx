@@ -218,7 +218,7 @@ const filteredDepartments = departments
               })
               setShowModal(true)
             }}
-            className="flex items-center text-[14px] font-medium gap-2 rounded-md bg-blue-600 px-4 py-2.5 text-white"
+            className="flex cursor-pointer items-center text-[14px] font-medium gap-2 rounded-md bg-blue-600 px-4 py-2.5 text-white"
           >
             <FaPlus /> Add Department
           </button>

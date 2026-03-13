@@ -370,6 +370,24 @@ if (currentHour >= firstHour && currentHour <= lastHour) {
                     )}
                   </div>
                 ))}
+                {currentTimeTop !== null && isToday && (
+                  <div
+                    className="absolute left-0 right-0 z-40 pointer-events-none"
+                    style={{ top: `${currentTimeTop}px` }}
+                  >
+                    <div className="relative flex items-center">
+
+                      <div className="absolute -left-15 text-[11px] border rounded-md p-1 font-medium text-blue-500">
+                        {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </div>
+
+                      <div className="absolute -left-1.5 w-3 h-3 rounded-full bg-blue-500"></div>
+
+                      <div className="border-t-2 border-blue-500 w-full"></div>
+
+                    </div>
+                  </div>
+                )}
 
                 {/* Meetings */}
                 {dayMeetings.map(m => {
@@ -510,7 +528,7 @@ if (currentHour >= firstHour && currentHour <= lastHour) {
       </div>
 
       {/* Body */}
-      <div className="flex-1 min-h-[500px]">
+      <div className="flex-1 min-h-[500px] ">
         {viewMode === "month" ? renderMonthGrid() : renderTimeGrid()}
       </div>
     </div>

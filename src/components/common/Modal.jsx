@@ -140,6 +140,7 @@ export default function Modal({
               <Select.Portal>
                 <Select.Content
               position="popper"
+               side="bottom"
               sideOffset={6}
               className="
                 z-50 w-[var(--radix-select-trigger-width)]
@@ -216,9 +217,11 @@ export default function Modal({
               <Select.Portal>
                 <Select.Content
               position="popper"
+              side="bottom"
+              align="start"
               sideOffset={6}
               className="
-                z-50 w-[var(--radix-select-trigger-width)]
+                z-50 min-w-[var(--radix-select-trigger-width)]
                 overflow-hidden rounded-xl border border-slate-200
                 bg-white shadow-xl
               "
@@ -268,7 +271,7 @@ export default function Modal({
               <button
                 type="submit"
                 disabled={!form.role_id || !form.department_id}
-                className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                className="rounded-xl cursor-pointer bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
               >
                 {editingUser ? "Update User" : "Create User"}
               </button>
@@ -276,7 +279,7 @@ export default function Modal({
               <Dialog.Close asChild>
                 <button
                   type="button"
-                  className="text-sm text-slate-500 hover:text-slate-700"
+                  className="text-sm cursor-pointer text-slate-500 hover:text-slate-700"
                 >
                   Cancel
                 </button>
