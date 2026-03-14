@@ -1,5 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import toast from "react-hot-toast";
+import UserCardSkeleton from "../../components/skeletons/UserCardSkeleton";
+
 
 /* ---------------- USER SERVICES ---------------- */
 import {
@@ -22,6 +24,7 @@ import useAuth from "../../hooks/useAuth";
 import { HiDotsHorizontal } from "react-icons/hi";
 import { FiSearch, FiShield, FiUserPlus } from "react-icons/fi";
 import Modal from "../../components/common/Modal";
+import ConfirmDeleteModal from "../../components/common/ConfirmDeleteModal";
 
 export default function People() {
   const { user } = useAuth();
@@ -41,6 +44,11 @@ export default function People() {
   const [showModal, setShowModal] = useState(false);
   const [viewingUser, setViewingUser] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
 
   const [form, setForm] = useState({
     name: "",
@@ -151,17 +159,34 @@ const handleEdit = (user) => {
 };
 
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this user?")) return;
+ const handleDeleteClick = (id) => {
+  setUserToDelete(id);
+  setDeleteModalOpen(true);
+};
 
-    await toast.promise(deleteUserService(id), {
+const confirmDelete = async () => {
+  if (!userToDelete) return;
+
+  try {
+    setIsDeleting(true);
+
+    await toast.promise(deleteUserService(userToDelete), {
       loading: "Deleting user...",
       success: "User deleted successfully",
       error: "Failed to delete user",
     });
 
     fetchUsers();
-  };
+    setDeleteModalOpen(false);
+    setUserToDelete(null);
+
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setIsDeleting(false);
+  }
+};
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -278,20 +303,27 @@ const handleEdit = (user) => {
         </div>
 
         {/* CONTENT */}
-        {sortedGroupedUsers.map(([roleName, roleUsers]) => (
+        {loading ? (
+  <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-6 pr-65">
+    {Array.from({ length: 6 }).map((_, i) => (
+      <UserCardSkeleton key={i} />
+    ))}
+  </div>
+) : (
+        sortedGroupedUsers.map(([roleName, roleUsers]) => (
           <div key={roleName} className="space-y-4  pr-65">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-600 uppercase">
               <FiShield className="w-4 h-4" />
               {roleName} ({roleUsers.length})
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-6">
               {roleUsers.map((u) => (
                 <div
                   key={u.id}
                   onMouseEnter={() => setHoveredUser(u)}
                   onMouseLeave={() => setHoveredUser(null)}
-                  className="relative bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition duration-200 p-6 flex justify-between"
+                  className="relative bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition duration-200 p-4 sm:p-6 flex items-start justify-between gap-3"
                 >
                   <div className="flex gap-4">
                     <div className="relative">
@@ -305,17 +337,20 @@ const handleEdit = (user) => {
                       />
                     </div>
 
-                    <div>
-                      <h3 className="font-semibold text-slate-900">
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-slate-900 truncate">
                         {u.name}
                       </h3>
-                      <p className="text-sm text-slate-500">
+
+                      <p className="text-sm text-slate-500 truncate">
                         {u.email}
                       </p>
-                      <p className="text-sm text-slate-400">
+
+                      <p className="text-sm text-slate-400 truncate">
                         {u.department?.department || "—"}
                       </p>
                     </div>
+
                   </div>
 
                   {/* MENU */}
@@ -347,8 +382,9 @@ const handleEdit = (user) => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDelete(u.id);
+                            handleDeleteClick(u.id);
                           }}
+
                           className="block cursor-pointer w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50"
                         >
                           Delete
@@ -408,7 +444,8 @@ const handleEdit = (user) => {
               ))}
             </div>
           </div>
-        ))}
+        ))
+      )}
 
         {/* MODAL */}
         <Modal
@@ -421,6 +458,16 @@ const handleEdit = (user) => {
           departments={departments}
           onSubmit={handleSubmit}
         />
+
+        <ConfirmDeleteModal
+          open={deleteModalOpen}
+          onOpenChange={setDeleteModalOpen}
+          onConfirm={confirmDelete}
+          isDeleting={isDeleting}
+          title="Delete User"
+          description="Are you sure you want to delete this user? This action cannot be undone."
+        />
+
 
       </div>
     </div>

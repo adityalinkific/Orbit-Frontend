@@ -218,7 +218,6 @@ export default function Modal({
                 <Select.Content
               position="popper"
               side="bottom"
-              align="start"
               sideOffset={6}
               className="
                 z-50 min-w-[var(--radix-select-trigger-width)]

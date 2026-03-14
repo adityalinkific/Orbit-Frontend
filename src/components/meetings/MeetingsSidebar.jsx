@@ -4,6 +4,8 @@ import { Clock } from "lucide-react"
 const MeetingsSidebar = ({ meetings, onMeetingClick }) => {
   const [tab, setTab] = useState("upcoming")
 
+
+
   const today = new Date().toISOString().split("T")[0]
 
   const upcomingMeetings = meetings.filter(m => m.date >= today)
@@ -63,19 +65,21 @@ const MeetingsSidebar = ({ meetings, onMeetingClick }) => {
 
           const now = new Date()
 
-            const start = new Date(`${meeting.date}T${meeting.startTime}`)
-            const end = new Date(`${meeting.date}T${meeting.endTime}`)
+          const start = new Date(`${meeting.date}T${meeting.startTime}`)
+          const end = new Date(`${meeting.date}T${meeting.endTime}`)
 
-            let status = "scheduled"
+          const durationMinutes = Math.round((end - start) / (1000 * 60))
 
-            if (now >= start && now <= end) {
-              status = "live"
-            } else if (now > end) {
-              status = "completed"
-            }
+          let status = "scheduled"
 
+          if (now >= start && now <= end) {
+            status = "live"
+          } else if (now > end) {
+            status = "completed"
+          }
 
           return (
+
             <div
               key={meeting.id}
               onClick={() => onMeetingClick(meeting)}
@@ -101,10 +105,14 @@ const MeetingsSidebar = ({ meetings, onMeetingClick }) => {
 
               </div>
 
-              <div className="flex items-center gap-1 text-sm text-gray-500 mt-2">
+              <div className="flex items-center gap-1 text-[13px] text-gray-700 mt-2">
                 <Clock className="w-4 h-4" />
                 {meeting.startTime} – {meeting.endTime}
+                <span className="text-gray-700 ml-1">
+                  • {durationMinutes} min
+                </span>
               </div>
+
 
               {/* avatars */}
               <div className="flex justify-between items-center mt-4">

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { FaPlus } from "react-icons/fa6"
+import toast from "react-hot-toast"
 
 import {
   getDepartments,
@@ -17,6 +18,7 @@ import DepartmentsToolbar from "../../components/department/DepartmentsToolbar"
 import DepartmentDetailsModal from "../../components/department/DepartmentDetailsModal"
 import DepartmentCardSkeleton from "../../components/department/DepartmentCardSkeleton"
 import DepartmentTableSkeleton from "../../components/department/DepartmentTableSkeleton"
+import ConfirmDeleteModal from "../../components/common/ConfirmDeleteModal"
 
 const Departments = () => {
   const [users, setUsers] = useState([])
@@ -26,6 +28,10 @@ const Departments = () => {
   const [errorMessage, setErrorMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loadingDepartments, setLoadingDepartments] = useState(true)
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [departmentToDelete, setDepartmentToDelete] = useState(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const [selectedDepartment, setSelectedDepartment] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -80,10 +86,11 @@ const handleSubmit = async (e) => {
   e.preventDefault()
   if (isSubmitting) return
 
-  if (!form.name.trim()) {
-    setErrorMessage("Department name is required")
-    return
-  }
+if (!form.name.trim()) {
+  toast.error("Department name is required")
+  return
+}
+
 
   setIsSubmitting(true)
   setErrorMessage("")
@@ -98,11 +105,25 @@ const handleSubmit = async (e) => {
   }
 
   try {
-    if (editingDept) {
-      await updateDepartment(editingDept.id, payload) 
-    } else {
-      await createDepartment(payload)
-    }
+     if (editingDept) {
+    await toast.promise(
+      updateDepartment(editingDept.id, payload),
+      {
+        loading: "Updating department...",
+        success: "Department updated successfully",
+        error: "Failed to update department",
+      }
+    )
+  } else {
+    await toast.promise(
+      createDepartment(payload),
+      {
+        loading: "Creating department...",
+        success: "Department created successfully",
+        error: "Failed to create department",
+      }
+    )
+  }
 
     await fetchDepartments() 
     setShowModal(false)
@@ -124,22 +145,44 @@ const handleSubmit = async (e) => {
 
 
   /* ---------------- DELETE ---------------- */
-  const handleDelete = async (id) => {
-    if (!confirm("Delete department?")) return
+const handleDeleteClick = (id) => {
+  setDepartmentToDelete(id)
+  setDeleteModalOpen(true)
+}
 
-    try {
-      await deleteDepartment(id)
-      setDepartments((prev) => prev.filter((d) => d.id !== id))
+const confirmDelete = async () => {
+  if (!departmentToDelete) return
 
-      if (selectedDepartment?.id === id) {
-        setSidebarOpen(false)
-        setSelectedDepartment(null)
+  try {
+    setIsDeleting(true)
+
+    await toast.promise(
+      deleteDepartment(departmentToDelete),
+      {
+        loading: "Deleting department...",
+        success: "Department deleted successfully",
+        error: "Failed to delete department",
       }
-    } catch (err) {
-      console.error("Delete failed", err)
-      alert("Delete failed (backend CORS issue)")
+    )
+
+    setDepartments((prev) =>
+      prev.filter((d) => d.id !== departmentToDelete)
+    )
+
+    if (selectedDepartment?.id === departmentToDelete) {
+      setSidebarOpen(false)
+      setSelectedDepartment(null)
     }
+
+    setDeleteModalOpen(false)
+    setDepartmentToDelete(null)
+  } catch (err) {
+    console.error(err)
+  } finally {
+    setIsDeleting(false)
   }
+}
+
 
   /* ---------------- EDIT ---------------- */
 const handleEdit = (id) => {
@@ -255,7 +298,7 @@ const filteredDepartments = departments
                 department={d}
                 onClick={handleDepartmentClick}
                 onEdit={() => handleEdit(d.id)}
-                onDelete={() => handleDelete(d.id)}
+                onDelete={() => handleDeleteClick(d.id)}
               />
             ))}
           </div>
@@ -264,7 +307,7 @@ const filteredDepartments = departments
             departments={filteredDepartments}
             onDepartmentClick={handleDepartmentClick}
             onEdit={handleEdit}
-            onDelete={handleDelete}
+            onDelete={handleDeleteClick}
             sortBy={sortBy}           
             onSortChange={setSortBy} 
           />
@@ -285,9 +328,18 @@ const filteredDepartments = departments
       </div>
 
       <DepartmentDetailsModal
-  department={selectedDepartment}
-  open={sidebarOpen}
-  onOpenChange={setSidebarOpen}
+        department={selectedDepartment}
+        open={sidebarOpen}
+        onOpenChange={setSidebarOpen}
+            />
+
+      <ConfirmDeleteModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        onConfirm={confirmDelete}
+        isDeleting={isDeleting}
+        title="Delete Department"
+        description="Are you sure you want to delete this department? This action cannot be undone."
       />
     </>
   )

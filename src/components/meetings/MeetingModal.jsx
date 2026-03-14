@@ -139,7 +139,7 @@ const MeetingModal = ({
         <Dialog.Content className="fixed text-slate-900 left-1/2 top-1/2 z-50 w-full max-w-3xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white shadow-2xl outline-none">
 
           {/* HEADER */}
-          <div className="flex items-center justify-between px-6 py-4 border-b">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-300">
             <div>
               <Dialog.Title className="text-lg font-semibold text-gray-900">
                 {mode === "edit" ? "Edit Meeting" : "Schedule Meeting"}
@@ -451,7 +451,7 @@ const MeetingModal = ({
             </div>
 
             {/* FOOTER */}
-            <div className="col-span-2 flex justify-end gap-3 pt-5 border-t mt-3">
+            <div className="col-span-2 flex justify-end gap-3 pt-5 border-t border-gray-300 mt-3">
 
               <Dialog.Close asChild>
                 <button

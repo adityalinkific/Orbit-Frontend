@@ -2,6 +2,27 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import { MoreVertical, Users, Pencil, Trash2, Building2 } from "lucide-react"
 
 const DepartmentCard = ({ department, onEdit, onDelete, onClick }) => {
+
+  const getDepartmentColor = (name) => {
+  const colors = [
+    "bg-blue-600",
+    "bg-indigo-600",
+    "bg-emerald-600",
+    "bg-purple-600",
+    "bg-rose-600",
+    "bg-orange-500",
+    "bg-teal-600",
+    "bg-pink-600",
+  ]
+
+  let hash = 0
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  }
+
+  return colors[Math.abs(hash) % colors.length]
+}
+
   return (
     <div
       className="group relative rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:shadow-md cursor-pointer"
@@ -10,7 +31,12 @@ const DepartmentCard = ({ department, onEdit, onDelete, onClick }) => {
       {/* Top row */}
       <div className="flex items-start justify-between">
         {/* Icon */}
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white">
+        <div
+          className={`flex h-10 w-10 items-center justify-center rounded-xl text-white ${getDepartmentColor(
+            department.name
+          )}`}
+        >
+
           <Building2 />
         </div>
 

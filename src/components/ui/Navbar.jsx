@@ -39,7 +39,7 @@ export default function Navbar() {
       <div className="flex items-center justify-end gap-3">
         <button
           onClick={logout}
-          className="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition"
+          className="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-md text-sm font-medium transition"
         >
           Logout
         </button>
