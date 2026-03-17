@@ -146,9 +146,20 @@ if (!form.name.trim()) {
 
   /* ---------------- DELETE ---------------- */
 const handleDeleteClick = (id) => {
+  const dept = departments.find((d) => d.id === id)
+  if (!dept) return
+
+  if (dept.total_members > 0) {
+    toast.error(
+      "This department has members. Please reassign them from the People page before deleting."
+    )
+    return
+  }
+
   setDepartmentToDelete(id)
   setDeleteModalOpen(true)
 }
+
 
 const confirmDelete = async () => {
   if (!departmentToDelete) return

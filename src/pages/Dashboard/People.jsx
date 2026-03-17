@@ -56,7 +56,7 @@ export default function People() {
     password: "",
     role_id: "",
     department_id: "",
-    reporting_manager_id: null,
+    reporting_manager_id: 0,
     is_active: true,
     joined_date: new Date().toISOString().split("T")[0],
   });
@@ -248,7 +248,7 @@ const confirmDelete = async () => {
   /* ================= UI ================= */
 
   return (
-    <div className="bg-slate-100 min-h-screen px-25 py-10 pb-50">
+    <div className="bg-slate-100 min-h-screen px-25 py-10 pb-80 ">
       <div className="max-w-7xl mx-auto space-y-10">
 
         {/* HEADER */}
@@ -304,28 +304,41 @@ const confirmDelete = async () => {
 
         {/* CONTENT */}
         {loading ? (
-  <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-6 pr-65">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 ">
     {Array.from({ length: 6 }).map((_, i) => (
       <UserCardSkeleton key={i} />
     ))}
   </div>
 ) : (
         sortedGroupedUsers.map(([roleName, roleUsers]) => (
-          <div key={roleName} className="space-y-4  pr-65">
+          <div key={roleName} className="space-y-4  ">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-600 uppercase">
               <FiShield className="w-4 h-4" />
               {roleName} ({roleUsers.length})
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {roleUsers.map((u) => (
                 <div
                   key={u.id}
                   onMouseEnter={() => setHoveredUser(u)}
-                  onMouseLeave={() => setHoveredUser(null)}
-                  className="relative bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition duration-200 p-4 sm:p-6 flex items-start justify-between gap-3"
+onMouseLeave={(e) => {
+  if (!e.currentTarget.contains(e.relatedTarget)) {
+    setHoveredUser(null);
+  }
+}}
+
+                  className="
+  relative w-full
+  bg-white rounded-xl border border-slate-200
+  shadow-sm hover:shadow-md
+  transition duration-200
+  p-4 sm:p-6
+  flex items-start justify-between gap-3
+"
+
                 >
-                  <div className="flex gap-4">
+                  <div className="flex gap-4 min-w-0 flex-1">
                     <div className="relative">
                       <div className="w-14 h-14 rounded-full bg-[#4b799b] text-white flex items-center justify-center font-semibold">
                         {getInitials(u.name)}
@@ -338,15 +351,18 @@ const confirmDelete = async () => {
                     </div>
 
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-slate-900 truncate">
+                      <h3 className="font-semibold text-slate-900 truncate max-w-full">
+
                         {u.name}
                       </h3>
 
-                      <p className="text-sm text-slate-500 truncate">
+                      <p className="text-sm text-slate-500 truncate max-w-full">
+
                         {u.email}
                       </p>
 
-                      <p className="text-sm text-slate-400 truncate">
+                      <p className="text-sm text-slate-400 truncate max-w-full">
+
                         {u.department?.department || "—"}
                       </p>
                     </div>
@@ -354,7 +370,7 @@ const confirmDelete = async () => {
                   </div>
 
                   {/* MENU */}
-                  <div className="relative">
+                  <div className="relative flex-shrink-0 ">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -368,7 +384,7 @@ const confirmDelete = async () => {
                     </button>
 
                     {dropdownUserId === u.id && (
-                      <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-xl z-20">
+                      <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-xl z-[20]">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -395,7 +411,18 @@ const confirmDelete = async () => {
 
                   {/* HOVER PREVIEW */}
                   {hoveredUser?.id === u.id && (
-                    <div className="absolute text-slate-900 top-6 left-full ml-4 w-72 bg-white rounded-xl shadow-2xl border border-slate-200 p-5 z-50 animate-in fade-in duration-200">
+                    <div  className="
+                                      absolute
+                                      top-full left-1/2
+                                      -translate-x-1/2
+                                      mt-3
+                                      w-[90%] max-w-sm
+                                      bg-white rounded-xl shadow-2xl border border-slate-200
+                                      p-5
+                                      z-[9]
+                                      pointer-events-none
+                                    "
+                                    >
                       <div className="flex items-center gap-3 mb-4">
                         <div className="relative">
                           <div className="w-12 h-12 rounded-full bg-[#4b799b] text-white flex items-center justify-center font-semibold text-sm">
