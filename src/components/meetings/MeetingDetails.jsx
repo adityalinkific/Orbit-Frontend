@@ -12,12 +12,17 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useState } from "react";
-import MeetingModal from "./MeetingModal"; // Assuming it's in the same folder
+import MeetingModal from "./MeetingModal"; 
+import ConfirmDeleteModal from "../common/ConfirmDeleteModal";
+import toast from "react-hot-toast";
+
 
 const MeetingDetails = ({ meeting, onBack, onDelete, onUpdate }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState(meeting);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   if (!meeting) return null;
 
@@ -46,15 +51,25 @@ const MeetingDetails = ({ meeting, onBack, onDelete, onUpdate }) => {
         project_id: form.project_id,
         meetingLink: form.meetingLink,
       };
+      
 
       await onUpdate(payload);
+       toast.success("Meeting updated successfully ✨");
       setIsModalOpen(false);
     } catch (err) {
       console.error("Update failed:", err);
+      toast.error("Update failed ❌");
     } finally {
       setIsSaving(false);
     }
   };
+  const copyLink = () => {
+  if (meeting.meetingLink) {
+    navigator.clipboard.writeText(meeting.meetingLink);
+    toast.success("Link copied 📋");
+  }
+};
+
 
   const now = new Date();
   const start = new Date(`${meeting.date}T${meeting.startTime}`);
@@ -114,7 +129,7 @@ const MeetingDetails = ({ meeting, onBack, onDelete, onUpdate }) => {
             Edit
           </button>
           <button
-            onClick={() => onDelete(meeting.id)}
+            onClick={() => setConfirmOpen(true)}
             className="p-2.5 border border-red-100 text-red-500 rounded-xl hover:bg-red-50 transition-all"
           >
             <Trash2 size={18} />
@@ -194,7 +209,7 @@ const MeetingDetails = ({ meeting, onBack, onDelete, onUpdate }) => {
                 {meeting.meetingLink || "No link generated"}
               </span>
               <button 
-                onClick={() => navigator.clipboard.writeText(meeting.meetingLink)}
+                onClick={() =>copyLink}
                 className="p-2 hover:bg-white/10 rounded-lg transition-colors"
               >
                 <Copy size={16} />
@@ -213,6 +228,29 @@ const MeetingDetails = ({ meeting, onBack, onDelete, onUpdate }) => {
         onSubmit={handleUpdateSubmit}
         mode="edit"
       />
+      <ConfirmDeleteModal
+  open={confirmOpen}
+  onOpenChange={setConfirmOpen}
+  isDeleting={isDeleting}
+  title="Delete Meeting"
+  description="This meeting will be permanently deleted. This action cannot be undone."
+  onConfirm={async () => {
+    try {
+      setIsDeleting(true);
+
+      await onDelete(meeting.id);
+
+      toast.success("Meeting deleted 🗑️");
+      setConfirmOpen(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete meeting ❌");
+    } finally {
+      setIsDeleting(false);
+    }
+  }}
+/>
+
     </div>
   );
 };

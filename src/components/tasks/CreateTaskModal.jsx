@@ -6,12 +6,17 @@ import { getDepartments } from "../../services/department.service";
 import { getAllUsersService } from "../../services/user.service"; 
 import { Cross2Icon, ChevronDownIcon, CheckIcon } from "@radix-ui/react-icons";
 import { Plus, User, Building2, AlertCircle } from "lucide-react";
+import { getAllProjects } from "../../services/project.service";
+import toast from "react-hot-toast";
+
 
 export default function CreateTaskModal({ open, onOpenChange, reload }) {
+
+  const [projects, setProjects] = useState([]);
   const [form, setForm] = useState({
     title: "",
     description: "",
-    project_id: 1, // Defaulting to 1 as per API schema requirement
+    project_id: "",
     department_id: "",
     user_id: "", // For task assignment
     task_type: "daily",
@@ -30,10 +35,16 @@ export default function CreateTaskModal({ open, onOpenChange, reload }) {
     const fetchData = async () => {
       setFetchingData(true);
       try {
-        const [deptData, userRes] = await Promise.all([
-          getDepartments(),
-          getAllUsersService()
-        ]);
+        const [deptData, userRes, projectRes] = await Promise.all([
+  getDepartments(),
+  getAllUsersService(),
+  getAllProjects()
+]);
+
+setDepartments(Array.isArray(deptData) ? deptData : []);
+setUsers(Array.isArray(userRes) ? userRes : userRes?.data || []);
+setProjects(Array.isArray(projectRes) ? projectRes : []);
+
 
         // Validate that we are setting an array to state
         // If userRes is { status: "...", data: [...] }, we need userRes.data
@@ -62,42 +73,40 @@ export default function CreateTaskModal({ open, onOpenChange, reload }) {
   }, [open]);
 
   const handleSubmit = async () => {
-    if (!form.title.trim() || !form.department_id) return;
-    
+    if (!form.title.trim() || !form.department_id || !form.project_id) return;
+
+    const toastId = toast.loading("Creating task...");
     setLoading(true);
     try {
-      // 1. Create the Task
-      const taskRes = await createTaskService({
-        title: form.title,
+      await createTaskService({
+        title: form.title.trim(),
         description: form.description,
         project_id: Number(form.project_id),
         department_id: Number(form.department_id),
-        task_type: form.task_type,
-        priority: form.priority,
+        task_type: form.task_type.toLowerCase(), 
+        priority: form.priority.toLowerCase(),
         due_date: form.due_date
       });
-
-      // 2. If a user was selected, assign the task (Using your task-assign API logic)
-      if (form.user_id && taskRes?.id) {
-        // You would call your taskAssignService here
-        // await taskAssignService({ task_id: taskRes.id, user_id: form.user_id, due_date: form.due_date });
-      }
+       toast.success("Task created successfully", { id: toastId });
 
       reload();
       onOpenChange(false);
       resetForm();
+
     } catch (error) {
-      console.error("Failed to create task:", error);
+      toast.error("Failed to create task", { id: toastId });
+      console.error("Failed to create task:", error?.response?.data || error);
     } finally {
       setLoading(false);
     }
   };
 
+
   const resetForm = () => {
     setForm({
       title: "",
       description: "",
-      project_id: 1,
+      project_id: "",
       department_id: "",
       user_id: "",
       task_type: "daily",
@@ -144,6 +153,39 @@ export default function CreateTaskModal({ open, onOpenChange, reload }) {
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
               />
             </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">
+                Project *
+              </label>
+
+              <Select.Root
+                value={form.project_id || undefined}
+                onValueChange={(v) => setForm({ ...form, project_id: v })}
+              >
+                <Select.Trigger className="flex items-center justify-between w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                  <Select.Value placeholder="Select Project" />
+                  <ChevronDownIcon />
+                </Select.Trigger>
+
+                <Select.Portal>
+                  <Select.Content className="bg-white text-slate-500 shadow-xl rounded-xl border border-slate-200 z-[110]">
+                    <Select.Viewport className="p-1">
+                      {projects.map((proj) => (
+                        <Select.Item
+                          key={proj.id}
+                          value={proj.id.toString()}
+                          className="px-3 py-2 text-sm rounded-lg hover:bg-slate-50"
+                        >
+                          <Select.ItemText>{proj.name}</Select.ItemText>
+                        </Select.Item>
+                      ))}
+                    </Select.Viewport>
+                  </Select.Content>
+                </Select.Portal>
+              </Select.Root>
+            </div>
+
 
             {/* Department & User Assignment */}
             <div className="grid grid-cols-2 gap-4">
@@ -250,27 +292,43 @@ export default function CreateTaskModal({ open, onOpenChange, reload }) {
                 </Select.Root>
               </div>
 
-              {/* Tab Category */}
+              {/* Task Type */}
               <div className="flex flex-col">
-                <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Tab Category</label>
-                <Select.Root value={form.task_type} onValueChange={(v) => setForm({ ...form, task_type: v })}>
-                  <Select.Trigger className="flex items-center justify-between w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:border-blue-500 outline-none transition-all">
+                <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Task Type</label>
+                <Select.Root
+                  value={form.task_type}
+                  onValueChange={(v) => setForm({ ...form, task_type: v })}
+                >
+                  <Select.Trigger className="flex items-center justify-between w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-blue-500 outline-none">
                     <Select.Value />
-                    <ChevronDownIcon className="text-slate-400" />
+                    <ChevronDownIcon />
                   </Select.Trigger>
+
                   <Select.Portal>
-                    <Select.Content className="bg-white text-slate-900 shadow-xl rounded-xl border border-slate-200 overflow-hidden z-[110]">
-                      <Select.Viewport className="p-1">
-                        {[{ val: "ongoing", label: "Ongoing" }, { val: "completed", label: "Completed" }, { val: "delegated", label: "Delegated" }, { val: "archive", label: "Archive" }].map((item) => (
-                          <Select.Item key={item.val} value={item.val} className="flex items-center justify-between px-3 py-2 text-sm rounded-lg cursor-pointer outline-none hover:bg-slate-50">
-                            <Select.ItemText>{item.label}</Select.ItemText>
-                            <Select.ItemIndicator><CheckIcon className="text-blue-600" /></Select.ItemIndicator>
-                          </Select.Item>
-                        ))}
-                      </Select.Viewport>
-                    </Select.Content>
-                  </Select.Portal>
+                  <Select.Content
+                    position="popper"
+                    sideOffset={6}
+                    className="z-[110] bg-white text-slate-900 shadow-xl rounded-xl border border-slate-200 overflow-hidden min-w-[var(--radix-select-trigger-width)]"
+                  >
+                    <Select.Viewport className="p-1">
+                      {[
+                        { val: "daily", label: "Daily" },
+                        { val: "weekly", label: "Weekly" }
+                      ].map((item) => (
+                        <Select.Item
+                          key={item.val}
+                          value={item.val}
+                          className="flex items-center px-3 py-2 text-sm rounded-lg cursor-pointer outline-none hover:bg-slate-50"
+                        >
+                          <Select.ItemText>{item.label}</Select.ItemText>
+                        </Select.Item>
+                      ))}
+                    </Select.Viewport>
+                  </Select.Content>
+                </Select.Portal>
+
                 </Select.Root>
+
               </div>
             </div>
           </div>

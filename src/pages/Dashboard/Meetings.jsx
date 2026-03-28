@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import MeetingModal from "../../components/meetings/MeetingModal";
 import Calendar from "../../components/meetings/Calendar";
 import MeetingsSidebar from "../../components/meetings/MeetingsSidebar";
 import MeetingDetails from "../../components/meetings/MeetingDetails";
+import toast from "react-hot-toast";
+
 
 import {
   getAllMeetings,
@@ -53,7 +55,7 @@ const Meetings = () => {
         date: m.start_time?.split("T")[0],
         startTime: m.start_time?.split("T")[1]?.slice(0, 5),
         endTime: m.end_time?.split("T")[1]?.slice(0, 5),
-        participants: [],
+        attendees: m.attendees || [],
         status: m.status,
         project_id: m.project_id,
       }));
@@ -77,7 +79,7 @@ const Meetings = () => {
 
 
       if (form.startTime >= form.endTime) {
-        alert("End time must be after start time");
+         toast.error("End time must be after start time");
         return;
       }
 
@@ -104,8 +106,10 @@ const Meetings = () => {
 
       if (modalMode === "create") {
         await createMeeting(payload);
+        toast.success("Meeting created successfully 🎉");
       } else {
         await updateMeeting(form.id, payload);
+        toast.success("Meeting updated successfully ✨");
       }
 
       await fetchMeetings();
@@ -113,6 +117,7 @@ const Meetings = () => {
 
     } catch (err) {
       console.error("❌ API ERROR:", err?.response?.data || err.message);
+      toast.error("Something went wrong ❌");
     } finally {
       setIsSubmitting(false);
     }
@@ -140,10 +145,12 @@ const Meetings = () => {
   const handleDelete = async (id) => {
     try {
       await deleteMeeting(id);
+      toast.success("Meeting deleted 🗑️");
       fetchMeetings();
       setSelectedMeeting(null);
     } catch (err) {
       console.error("Delete failed", err);
+       toast.error("Delete failed ❌");
     }
   };
 
@@ -167,7 +174,48 @@ const Meetings = () => {
   };
 
   /* ================= FILTER ================= */
-  const filteredMeetings = meetings; // keep your existing filter logic if needed
+  const filteredMeetings = useMemo(() => {
+  return meetings.filter((m) => {
+    // STATUS FILTER
+    if (filters.status !== "all" && m.status !== filters.status) {
+      return false;
+    }
+
+    // TYPE FILTER (if you add type later)
+    if (filters.type !== "all" && m.type !== filters.type) {
+      return false;
+    }
+
+    // DATE FILTER
+    if (filters.date !== "all") {
+      const today = new Date();
+      const meetingDate = new Date(m.date);
+
+      if (filters.date === "today") {
+        if (meetingDate.toDateString() !== today.toDateString()) return false;
+      }
+
+      if (filters.date === "upcoming") {
+        if (meetingDate < today) return false;
+      }
+
+      if (filters.date === "past") {
+        if (meetingDate >= today) return false;
+      }
+    }
+
+    // PARTICIPANT FILTER (if attendees exist)
+    if (filters.participant !== "all") {
+      const hasUser = m.attendees?.some(
+        (u) => u.id === filters.participant
+      );
+      if (!hasUser) return false;
+    }
+
+    return true;
+  });
+}, [meetings, filters]);
+
 
   return (
     <div className="h-screen bg-gray-50">

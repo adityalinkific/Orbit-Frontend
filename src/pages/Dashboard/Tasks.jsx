@@ -6,18 +6,21 @@ import CreateTaskModal from "../../components/tasks/CreateTaskModal";
 import EditTaskModal from "../../components/tasks/EditTaskModal";
 import KanbanBoard from "../../components/tasks/KanbanBoard";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import toast from "react-hot-toast";
 import { ChevronDown, Search, Check, SquareDashedKanban, TextAlignJustify } from "lucide-react"; // Added Check and Search
 
 // Assuming these are your service imports
 import { getAllTasksService, updateTaskService, deleteTaskService } from "../../services/tasks.services";
 import { meService } from "../../services/auth.service";
+import ConfirmDeleteModal from "../../components/common/ConfirmDeleteModal";
 
 const sortOptions = [
-  { label: "Low", value: "low" },
-  { label: "Medium", value: "medium" },
-  { label: "High", value: "high" },
-  { label: "Priority", value: "all" },
+  { label: "Newest", value: "created" },
+  { label: "High Priority", value: "high" },
+  { label: "Medium Priority", value: "medium" },
+  { label: "Low Priority", value: "low" },
 ];
+
 
 const statusOptions = [
   { label: "Status", value: "all" },
@@ -35,8 +38,10 @@ export default function Tasks() {
   const [tab, setTab] = useState("ongoing");
   const [editOpen, setEditOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  // --- ADDED MISSING STATE ---
   const [status, setStatus] = useState("all");
   const [sortBy, setSortBy] = useState("created");
   const [searchQuery, setSearchQuery] = useState("");
@@ -58,11 +63,21 @@ export default function Tasks() {
   const loadTasks = async () => {
     try {
       const res = await getAllTasksService();
-      setTasks(res?.data || []);
+      const newTasks = res?.data || [];
+
+      setTasks(newTasks);
+
+
+      if (selectedTask) {
+        const updated = newTasks.find(t => t.id === selectedTask.id);
+        setSelectedTask(updated || null);
+      }
+
     } catch (err) {
       console.error("Tasks load failed", err);
     }
   };
+
 
   const handleStatusChange = async (taskId, newStatus) => {
     try {
@@ -76,21 +91,78 @@ export default function Tasks() {
     }
   };
 
-  const handleDeleteTask = async (taskId) => {
-    if (!window.confirm("Are you sure you want to delete this task?")) return;
-    try {
-      await deleteTaskService(taskId);
-      if (selectedTask?.id === taskId) setSelectedTask(null);
-      loadTasks();
-    } catch (err) {
-      console.error("Failed to delete task", err);
-    }
+  const handleDeleteClick = (taskId) => {
+    setTaskToDelete(taskId);
+    setDeleteOpen(true);
   };
+
+const confirmDelete = async () => {
+  if (!taskToDelete) return;
+
+  const toastId = toast.loading("Deleting task...");
+
+  setIsDeleting(true);
+  try {
+    await deleteTaskService(taskToDelete);
+
+    toast.success("Task deleted successfully", { id: toastId });
+
+    if (selectedTask?.id === taskToDelete) {
+      setSelectedTask(null);
+    }
+
+    setDeleteOpen(false);
+    setTaskToDelete(null);
+    loadTasks();
+
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to delete task", { id: toastId });
+  } finally {
+    setIsDeleting(false);
+  }
+};
+
+
+
 
   const handleEditTask = (task) => {
     setTaskToEdit(task);
     setEditOpen(true);
   };
+
+  const filteredTasks = tasks
+  .filter((task) => {
+    // 🔍 Search (title + description)
+    const search = searchQuery.toLowerCase();
+    const matchesSearch =
+      task.title?.toLowerCase().includes(search) ||
+      task.description?.toLowerCase().includes(search);
+
+    // 📌 Status filter
+    const matchesStatus =
+      status === "all" ? true : task.status === status;
+
+    // 🏷️ Tab filter (ongoing / completed etc.)
+    const matchesTab =
+      tab === "ongoing"
+        ? task.status !== "completed"
+        : tab === "completed"
+        ? task.status === "completed"
+        : true;
+
+    return matchesSearch && matchesStatus && matchesTab;
+  })
+  .sort((a, b) => {
+    // 🔥 Priority sorting
+    if (sortBy === "low" || sortBy === "medium" || sortBy === "high") {
+      return a.priority === sortBy ? -1 : b.priority === sortBy ? 1 : 0;
+    }
+
+    // 🕒 Default sort (latest first)
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
+
 
   return (
     <div className="bg-[#F9FBFC] h-screen flex flex-col w-full overflow-hidden">
@@ -207,7 +279,7 @@ export default function Tasks() {
 
               <div className="flex-1 overflow-y-auto bg-[#F9FBFC]">
                 <TaskSidebar
-                  tasks={tasks}
+                  tasks={filteredTasks}
                   onSelect={setSelectedTask}
                   selectedId={selectedTask?.id}
                 />
@@ -217,7 +289,7 @@ export default function Tasks() {
             {/* Details */}
             <div className="flex-1 overflow-y-auto bg-white p-6">
               {selectedTask ? (
-                <TaskDetails task={selectedTask} onEdit={handleEditTask} onDelete={handleDeleteTask} />
+                <TaskDetails task={selectedTask} onEdit={handleEditTask} onDelete={handleDeleteClick}  />
               ) : (
                 <div className="h-full flex flex-col items-center justify-center text-gray-400">
                   <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
@@ -232,7 +304,7 @@ export default function Tasks() {
           </>
         ) : (
           <div className="flex-1 overflow-auto p-6 bg-[#F9FBFC]">
-            <KanbanBoard tasks={tasks} onStatusChange={handleStatusChange} />
+            <KanbanBoard tasks={filteredTasks} onStatusChange={handleStatusChange} />
           </div>
         )}
       </div>
@@ -240,6 +312,14 @@ export default function Tasks() {
 
       <CreateTaskModal open={open} onOpenChange={setOpen} reload={loadTasks} />
       <EditTaskModal open={editOpen} onOpenChange={setEditOpen} reload={loadTasks} task={taskToEdit} />
+      <ConfirmDeleteModal
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onConfirm={confirmDelete}
+        isDeleting={isDeleting}
+        title="Delete Task"
+        description="Are you sure you want to delete this task? This action cannot be undone."
+      />
     </div>
   );
 }

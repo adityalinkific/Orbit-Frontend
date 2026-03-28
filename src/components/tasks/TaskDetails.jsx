@@ -1,7 +1,10 @@
 import { Check, Edit2, Trash2 } from "lucide-react";
 
 export default function TaskDetails({ task, onEdit, onDelete }) {
+
+
   if (!task) return <div className="flex items-center justify-center h-full text-gray-400">Select a task to view details</div>;
+
 
   return (
     <div className="max-w-4xl relative">
@@ -21,7 +24,27 @@ export default function TaskDetails({ task, onEdit, onDelete }) {
       </div>
       
       <h1 className="text-3xl font-bold text-gray-900 mb-4 pr-24">{task.title}</h1>
-      
+
+
+      {/* 🔥 Action Buttons */}
+      <div className="flex gap-3 mb-6">
+        <button
+          onClick={() => onEdit(task)}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 transition"
+        >
+          <Edit2 size={16} />
+          Edit Task
+        </button>
+
+        <button
+          onClick={() => onDelete(task.id)}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-red-50 text-red-600 hover:bg-red-100 transition"
+        >
+          <Trash2 size={16} />
+          Delete Task
+        </button>
+      </div>
+
       <div className="flex gap-2 mb-8">
         <span className="px-3 py-1 border border-gray-200 rounded-full text-xs text-gray-500 font-medium capitalize flex items-center gap-1.5">
           <div className={`w-2 h-2 rounded-full ${

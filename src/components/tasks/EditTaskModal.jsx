@@ -6,64 +6,91 @@ import { getDepartments } from "../../services/department.service";
 import { getAllUsersService } from "../../services/user.service"; 
 import { Cross2Icon, ChevronDownIcon, CheckIcon } from "@radix-ui/react-icons";
 import { Save } from "lucide-react";
+import { getAllProjects } from "../../services/project.service";
+import toast from "react-hot-toast";
+
 
 export default function EditTaskModal({ open, onOpenChange, reload, task }) {
+  const [projects, setProjects] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [users, setUsers] = useState([]);
   const [form, setForm] = useState({
     title: "",
     description: "",
-    project_id: 1,
+    project_id: "",
     department_id: "",
     user_id: "",
     task_type: "daily",
     priority: "low",
     due_date: "",
-    status: "to-do"
+    status: "to-do",
   });
 
-  const [departments, setDepartments] = useState([]);
-  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  //  Fetch all dropdown data
   useEffect(() => {
-    if (open) {
-      const fetchData = async () => {
-        try {
-          const [deptData, userRes] = await Promise.all([
-            getDepartments(),
-            getAllUsersService()
-          ]);
-          const userList = Array.isArray(userRes) ? userRes : userRes?.data || [];
-          setDepartments(Array.isArray(deptData) ? deptData : []);
-          setUsers(userList);
-        } catch (err) {
-          console.error("Error fetching modal data:", err);
-        }
-      };
-      fetchData();
+    if (!open) return;
 
-      if (task) {
-        setForm({
-          title: task.title || "",
-          description: task.description || "",
-          project_id: task.project_id || 1,
-          department_id: task.department_id?.toString() || "",
-          user_id: task.user_id?.toString() || "",
-          task_type: task.task_type || "daily",
-          priority: task.priority || "low",
-          due_date: task.due_date || "",
-          status: task.status || "to-do"
-        });
+    const fetchData = async () => {
+      try {
+        const [deptData, userRes, projectRes] = await Promise.all([
+          getDepartments(),
+          getAllUsersService(),
+          getAllProjects(),
+        ]);
+
+        setDepartments(Array.isArray(deptData) ? deptData : []);
+        setUsers(Array.isArray(userRes) ? userRes : userRes?.data || []);
+        setProjects(Array.isArray(projectRes) ? projectRes : []);
+      } catch (err) {
+        console.error("Error fetching modal data:", err);
       }
+    };
+
+    fetchData();
+
+    //  Populate form
+    if (task) {
+      setForm({
+        title: task.title || "",
+        description: task.description || "",
+        project_id: task.project_id?.toString() || "",
+        department_id: task.department_id?.toString() || "",
+        user_id: task.user_id?.toString() || "",
+        task_type: task.task_type || "daily",
+        priority: task.priority || "low",
+        due_date: task.due_date || "",
+        status: task.status || "to-do",
+      });
     }
   }, [open, task]);
 
+  //  Reset form on close
+  useEffect(() => {
+    if (!open) {
+      setForm({
+        title: "",
+        description: "",
+        project_id: "",
+        department_id: "",
+        user_id: "",
+        task_type: "daily",
+        priority: "low",
+        due_date: "",
+        status: "to-do",
+      });
+    }
+  }, [open]);
+
   const handleSubmit = async () => {
-    if (!form.title.trim() || !form.department_id) return;
-    
+    if (!form.title.trim() || !form.department_id || !form.project_id) return;
+    const toastId = toast.loading("Updating task...");
+
     setLoading(true);
     try {
       await updateTaskService(task.id, {
-        title: form.title,
+        title: form.title.trim(),
         description: form.description,
         project_id: Number(form.project_id),
         department_id: Number(form.department_id),
@@ -71,17 +98,20 @@ export default function EditTaskModal({ open, onOpenChange, reload, task }) {
         task_type: form.task_type,
         priority: form.priority,
         due_date: form.due_date,
-        status: form.status
+        status: form.status,
       });
+      toast.success("Task updated successfully", { id: toastId });
 
       reload();
       onOpenChange(false);
     } catch (error) {
+      toast.error("Failed to update task", { id: toastId });
       console.error("Failed to update task:", error);
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -119,6 +149,38 @@ export default function EditTaskModal({ open, onOpenChange, reload, task }) {
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
               />
             </div>
+
+            <div>
+                          <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">
+                            Project *
+                          </label>
+            
+                          <Select.Root
+                            value={form.project_id || undefined}
+                            onValueChange={(v) => setForm({ ...form, project_id: v })}
+                          >
+                            <Select.Trigger className="flex items-center justify-between w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                              <Select.Value placeholder="Select Project" />
+                              <ChevronDownIcon />
+                            </Select.Trigger>
+            
+                            <Select.Portal>
+                              <Select.Content className="bg-white text-slate-500 shadow-xl rounded-xl border border-slate-200 z-[110]">
+                                <Select.Viewport className="p-1">
+                                  {projects.map((proj) => (
+                                    <Select.Item
+                                      key={proj.id}
+                                      value={proj.id.toString()}
+                                      className="px-3 py-2 text-sm rounded-lg hover:bg-slate-50"
+                                    >
+                                      <Select.ItemText>{proj.name}</Select.ItemText>
+                                    </Select.Item>
+                                  ))}
+                                </Select.Viewport>
+                              </Select.Content>
+                            </Select.Portal>
+                          </Select.Root>
+                        </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -219,27 +281,44 @@ export default function EditTaskModal({ open, onOpenChange, reload, task }) {
                 </Select.Root>
               </div>
 
-              <div className="flex flex-col">
-                <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Tab Category</label>
-                <Select.Root value={form.task_type} onValueChange={(v) => setForm({ ...form, task_type: v })}>
-                  <Select.Trigger className="flex items-center justify-between w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:border-blue-500 outline-none transition-all">
-                    <Select.Value />
-                    <ChevronDownIcon className="text-slate-400" />
-                  </Select.Trigger>
-                  <Select.Portal>
-                    <Select.Content className="bg-white text-slate-900 shadow-xl rounded-xl border border-slate-200 overflow-hidden z-[110]">
-                      <Select.Viewport className="p-1">
-                        {[{ val: "ongoing", label: "Ongoing" }, { val: "completed", label: "Completed" }, { val: "delegated", label: "Delegated" }, { val: "archive", label: "Archive" }].map((item) => (
-                          <Select.Item key={item.val} value={item.val} className="flex items-center justify-between px-3 py-2 text-sm rounded-lg cursor-pointer outline-none hover:bg-slate-50">
-                            <Select.ItemText>{item.label}</Select.ItemText>
-                            <Select.ItemIndicator><CheckIcon className="text-blue-600" /></Select.ItemIndicator>
-                          </Select.Item>
-                        ))}
-                      </Select.Viewport>
-                    </Select.Content>
-                  </Select.Portal>
-                </Select.Root>
-              </div>
+              {/* Task Type */}
+                            <div className="flex flex-col">
+                              <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">Task Type</label>
+                              <Select.Root
+                                value={form.task_type}
+                                onValueChange={(v) => setForm({ ...form, task_type: v })}
+                              >
+                                <Select.Trigger className="flex items-center justify-between w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-blue-500 outline-none">
+                                  <Select.Value />
+                                  <ChevronDownIcon />
+                                </Select.Trigger>
+              
+                                <Select.Portal>
+                                <Select.Content
+                                  position="popper"
+                                  sideOffset={6}
+                                  className="z-[110] bg-white text-slate-900 shadow-xl rounded-xl border border-slate-200 overflow-hidden min-w-[var(--radix-select-trigger-width)]"
+                                >
+                                  <Select.Viewport className="p-1">
+                                    {[
+                                      { val: "daily", label: "Daily" },
+                                      { val: "weekly", label: "Weekly" }
+                                    ].map((item) => (
+                                      <Select.Item
+                                        key={item.val}
+                                        value={item.val}
+                                        className="flex items-center px-3 py-2 text-sm rounded-lg cursor-pointer outline-none hover:bg-slate-50"
+                                      >
+                                        <Select.ItemText>{item.label}</Select.ItemText>
+                                      </Select.Item>
+                                    ))}
+                                  </Select.Viewport>
+                                </Select.Content>
+                              </Select.Portal>
+              
+                              </Select.Root>
+              
+                            </div>
             </div>
           </div>
           

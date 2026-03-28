@@ -7,7 +7,7 @@ import api from "./api";
 // Create Task
 export const createTaskService = async (payload) => {
   const res = await api.post("/tasks/", payload);
-  return res.data;
+  return res.data.data; 
 };
 
 // Get All Tasks
@@ -30,9 +30,14 @@ export const updateTaskService = async (taskId, payload) => {
 
 // Delete Task
 export const deleteTaskService = async (taskId) => {
-  const res = await api.delete(`/tasks/delete-task/${taskId}`);
+  const res = await api.delete(`/tasks/delete-task/${taskId}`, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
   return res.data;
 };
+
 
 
 
@@ -86,4 +91,15 @@ export const getAllAssignedTasksService = async () => {
     "/tasks/task-assign/all-task-assign-detail"
   );
   return res.data;
+};
+
+
+export const getDepartmentDetail = async (id) => {
+  const res = await api.get(`/departments/department-detail/${id}`);
+
+  if (!res.data?.data) {
+    throw new Error("Invalid department response");
+  }
+
+  return res.data.data;
 };
