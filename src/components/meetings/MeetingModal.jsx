@@ -2,6 +2,7 @@ import * as Dialog from "@radix-ui/react-dialog"
 import * as Switch from "@radix-ui/react-switch"
 import { X, Check, Copy } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
+import { Toaster, toast } from "react-hot-toast";
 
 import { getAllUsersService } from "../../services/user.service"
 import { getAllProjects } from "../../services/project.service";
@@ -62,13 +63,23 @@ useEffect(() => {
     }
   }
 
-  const handleLocalSubmit = (e) => {
-    e.preventDefault()
+const handleLocalSubmit = async (e) => {
+  e.preventDefault();
 
+  try {
+    if (form.startTime >= form.endTime) {
+      toast.error("End time must be after start time", {
+        id: "modal-toast",
+      });
+      return;
+    }
+
+    // email logic (keep as is)
     if (form.sendInvite && form.attendees?.length > 0) {
-      const emails = form.attendees.map((a) => a.email).filter(Boolean).join(",")
+      const emails = form.attendees.map((a) => a.email).filter(Boolean).join(",");
+
       if (emails) {
-        const subject = encodeURIComponent(`Meeting Invite: ${form.title}`)
+        const subject = encodeURIComponent(`Meeting Invite: ${form.title}`);
         const body = encodeURIComponent(
           `You are invited to a meeting.\n\n` +
           `Title: ${form.title || 'Untitled Meeting'}\n` +
@@ -76,14 +87,28 @@ useEffect(() => {
           `Time: ${form.startTime} - ${form.endTime}\n` +
           (form.description ? `Agenda/Notes: ${form.description}\n` : "") +
           (form.generateLink && form.meetingLink ? `\nJoin Meeting: ${form.meetingLink}\n` : "")
-        )
-        window.location.href = `mailto:${emails}?subject=${subject}&body=${body}`
+        );
+
+        window.location.href = `mailto:${emails}?subject=${subject}&body=${body}`;
       }
     }
 
-    // Call the parent's onSubmit
-    if (onSubmit) onSubmit(e)
+    if (onSubmit) await onSubmit(e);
+
+    toast.success(
+      mode === "edit"
+        ? "Meeting updated successfully ✨"
+        : "Meeting created successfully 🎉",
+      { id: "modal-toast" }
+    );
+
+  } catch (err) {
+    toast.error("Something went wrong ❌", {
+      id: "modal-toast",
+    });
   }
+};
+
 
   /* ---------------- FETCH USERS ---------------- */
   useEffect(() => {
@@ -154,7 +179,22 @@ useEffect(() => {
 
         {/* Modal */}
         <Dialog.Content className="fixed text-slate-900 left-1/2 top-1/2 z-50 w-full max-w-3xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white shadow-2xl outline-none">
-
+            <Toaster
+              position="top-center"
+              containerStyle={{
+                position: "absolute",
+                top: 16,
+                left: 0,
+                right: 0,
+              }}
+              toastOptions={{
+                style: {
+                  fontSize: "12px",
+                  borderRadius: "8px",
+                  padding: "8px 12px",
+                },
+              }}
+            />
           {/* HEADER */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-300">
             <div>

@@ -41,11 +41,14 @@ const Meetings = () => {
     project_id: "", 
   });
 
+  
+
   /* ================= FETCH ================= */
   const fetchMeetings = async () => {
     try {
 
       const data = await getAllMeetings();
+      console.log(data)
 
 
       const formatted = data.map((m) => ({
@@ -55,13 +58,27 @@ const Meetings = () => {
 
         date: m.meeting_date,
 
-        startTime: m.start_time?.split("T")[1]?.slice(0, 5) || "",
-        endTime: m.end_time?.split("T")[1]?.slice(0, 5) || "",
+        startTime: m.start_time?.slice(0, 5) || "",
+        endTime: m.end_time?.slice?.(0, 5) || "",
 
+        // ✅ FIX: keep raw attendees
         attendees: m.attendee_user_ids?.map((id) => ({ id })) || [],
+
+        // ✅ FIX: add participants fallback (UI expects this)
+        participants:
+          m.attendees_details || // if backend sends full user objects
+          m.attendee_user_ids?.map((id) => ({
+            id,
+            name: `User ${id}`, // fallback (replace later with real data)
+          })) ||
+          [],
+
+        // ✅ FIX: map meeting link
+        meetingLink: m.meeting_link || "",
 
         status: m.status,
         project_id: m.project_id,
+        organizer_id: m.organizer_id,
       }));
 
 
@@ -75,6 +92,21 @@ const Meetings = () => {
     fetchMeetings();
   }, []);
 
+  const formatTimeToUTCString = (time) => {
+  // time = "13:41"
+  const [hours, minutes] = time.split(":").map(Number);
+
+  const date = new Date();
+  date.setUTCHours(hours);
+  date.setUTCMinutes(minutes);
+  date.setUTCSeconds(0);
+  date.setUTCMilliseconds(0);
+
+  return date.toISOString().split("T")[1]; 
+  // 👉 "13:41:00.000Z"
+};
+
+
   /* ================= CREATE / UPDATE ================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -84,7 +116,6 @@ const Meetings = () => {
 
 
       if (form.startTime >= form.endTime) {
-         toast.error("End time must be after start time");
          setIsSubmitting(false);
         return;
       }
@@ -93,25 +124,26 @@ const payload = {
   title: form.title,
   description: form.description,
 
-  meeting_date: form.date,
+  meeting_date: form.date, // already correct
 
-  start_time: new Date(`${form.date}T${form.startTime}`).toISOString(),
-  end_time: new Date(`${form.date}T${form.endTime}`).toISOString(),
+  start_time: formatTimeToUTCString(form.startTime),
 
   project_id: Number(form.project_id) || 0,
 
   status: "Scheduled",
 
-  meeting_link: form.generateLink ? form.meetingLink : "",
-
-  organizer_id: form.organizer ? Number(form.organizer) : 0,
+  organizer_id: Number(form.organizer) || 0,
 
   attendee_user_ids: form.attendees?.map((u) => Number(u.id)) || [],
 
   attendee_emails:
     form.attendees?.map((u) => u.email).filter(Boolean) || [],
+
   generate_meeting_link: Boolean(form.generateLink),
+
+  meeting_link: form.generateLink ? form.meetingLink : "",
 };
+
 
 
 
@@ -120,18 +152,17 @@ const payload = {
 
       if (modalMode === "create") {
         await createMeeting(payload);
-        toast.success("Meeting created successfully 🎉");
+
       } else {
         await updateMeeting(form.id, payload);
-        toast.success("Meeting updated successfully ✨");
       }
 
       await fetchMeetings();
       setShowModal(false);
 
     } catch (err) {
-      console.error("❌ API ERROR:", err?.response?.data || err.message);
-      toast.error("Something went wrong ❌");
+     console.error("❌ API ERROR:", err?.response?.data || err.message);
+      throw err;;
     } finally {
       setIsSubmitting(false);
     }

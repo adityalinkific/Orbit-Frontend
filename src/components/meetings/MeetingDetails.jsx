@@ -26,49 +26,94 @@ const MeetingDetails = ({ meeting, onBack, onDelete, onUpdate }) => {
 
   if (!meeting) return null;
 
+  const formatTimeToUTCString = (time) => {
+  const [hours, minutes] = time.split(":").map(Number);
+
+  const date = new Date();
+  date.setUTCHours(hours);
+  date.setUTCMinutes(minutes);
+  date.setUTCSeconds(0);
+  date.setUTCMilliseconds(0);
+
+  return date.toISOString().split("T")[1];
+};
+
+
   // Sync form when opening modal
-  const handleEditClick = () => {
-    setForm({
-      ...meeting,
-      attendees: meeting.participants || [], // Map participants to attendees for the modal
-      sendInvite: false,
-      generateLink: !!meeting.meetingLink,
-    });
-    setIsModalOpen(true);
-  };
+const handleEditClick = () => {
+  setForm({
+    ...meeting,
 
-  const handleUpdateSubmit = async (e) => {
-    if (e) e.preventDefault();
-    try {
-      setIsSaving(true);
+    attendees: meeting.participants || [],
 
-      const payload = {
-        title: form.title,
-        description: form.description,
-        start_time: new Date(`${form.date}T${form.startTime}`).toISOString(),
-        end_time: new Date(`${form.date}T${form.endTime}`).toISOString(),
-        attendees: form.attendees?.map((p) => p.id),
-        project_id: form.project_id,
-        meetingLink: form.meetingLink,
-      };
-      
+    organizer: meeting.organizer_id || "",
 
-      await onUpdate(payload);
-       toast.success("Meeting updated successfully ✨");
-      setIsModalOpen(false);
-    } catch (err) {
-      console.error("Update failed:", err);
-      toast.error("Update failed ❌");
-    } finally {
-      setIsSaving(false);
+    meetingLink: meeting.meeting_link || "",
+
+    generateLink: Boolean(meeting.meeting_link),
+  });
+
+  setIsModalOpen(true);
+};
+
+
+const handleUpdateSubmit = async (e) => {
+  if (e) e.preventDefault();
+
+  try {
+    setIsSaving(true);
+
+    if (form.startTime >= form.endTime) {
+      toast.error("End time must be after start time");
+      return;
     }
-  };
-  const copyLink = () => {
+
+    const payload = {
+      title: form.title,
+      description: form.description,
+
+      meeting_date: form.date,
+
+      start_time: formatTimeToUTCString(form.startTime),
+
+      project_id: Number(form.project_id) || 0,
+
+      status: "Scheduled",
+
+      organizer_id: Number(form.organizer) || 0,
+
+      attendee_user_ids:
+        form.attendees?.map((p) => Number(p.id)) || [],
+
+      attendee_emails:
+        form.attendees?.map((p) => p.email).filter(Boolean) || [],
+
+      generate_meeting_link: Boolean(form.generateLink),
+
+      meeting_link: form.generateLink ? form.meetingLink : "",
+    };
+
+    await onUpdate(payload);
+
+    toast.success("Meeting updated successfully ✨");
+    setIsModalOpen(false);
+  } catch (err) {
+    console.error("Update failed:", err);
+    toast.error("Update failed ❌");
+  } finally {
+    setIsSaving(false);
+  }
+};
+
+const copyLink = () => {
   if (meeting.meetingLink) {
     navigator.clipboard.writeText(meeting.meetingLink);
     toast.success("Link copied 📋");
+  } else {
+    toast.error("No link available");
   }
 };
+
 
 
   const now = new Date();
@@ -182,11 +227,11 @@ const MeetingDetails = ({ meeting, onBack, onDelete, onUpdate }) => {
             </div>
 
             <div className="space-y-4">
-              {meeting.participants?.map((p) => (
+              {(meeting.participants || meeting.attendees || []).map((p) => (
                 <div key={p.id} className="flex justify-between items-center p-3 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
                   <div className="flex gap-3 items-center">
                     <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold shadow-md shadow-blue-100">
-                      {p.name?.[0].toUpperCase()}
+                      {p.name?.[0]?.toUpperCase() || "U"}
                     </div>
                     <div>
                       <p className="text-sm font-bold text-slate-800">{p.name}</p>
@@ -209,7 +254,7 @@ const MeetingDetails = ({ meeting, onBack, onDelete, onUpdate }) => {
                 {meeting.meetingLink || "No link generated"}
               </span>
               <button 
-                onClick={() =>copyLink}
+                onClick={copyLink}
                 className="p-2 hover:bg-white/10 rounded-lg transition-colors"
               >
                 <Copy size={16} />
