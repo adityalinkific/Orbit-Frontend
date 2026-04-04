@@ -59,7 +59,7 @@ const Meetings = () => {
         date: m.meeting_date,
 
         startTime: m.start_time?.slice(0, 5) || "",
-        endTime: m.end_time?.slice?.(0, 5) || "",
+         repeatType: m.repeat_type || "none",
 
         // ✅ FIX: keep raw attendees
         attendees: m.attendee_user_ids?.map((id) => ({ id })) || [],
@@ -73,7 +73,6 @@ const Meetings = () => {
           })) ||
           [],
 
-        // ✅ FIX: map meeting link
         meetingLink: m.meeting_link || "",
 
         status: m.status,

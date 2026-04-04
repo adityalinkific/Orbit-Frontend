@@ -67,12 +67,6 @@ const handleLocalSubmit = async (e) => {
   e.preventDefault();
 
   try {
-    if (form.startTime >= form.endTime) {
-      toast.error("End time must be after start time", {
-        id: "modal-toast",
-      });
-      return;
-    }
 
     // email logic (keep as is)
     if (form.sendInvite && form.attendees?.length > 0) {
@@ -84,7 +78,7 @@ const handleLocalSubmit = async (e) => {
           `You are invited to a meeting.\n\n` +
           `Title: ${form.title || 'Untitled Meeting'}\n` +
           `Date: ${form.date}\n` +
-          `Time: ${form.startTime} - ${form.endTime}\n` +
+          `Time: ${form.startTime}\n` +
           (form.description ? `Agenda/Notes: ${form.description}\n` : "") +
           (form.generateLink && form.meetingLink ? `\nJoin Meeting: ${form.meetingLink}\n` : "")
         );
@@ -178,7 +172,10 @@ const handleLocalSubmit = async (e) => {
         <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm data-[state=open]:animate-fadeIn z-50" />
 
         {/* Modal */}
-        <Dialog.Content className="fixed text-slate-900 left-1/2 top-1/2 z-50 w-full max-w-3xl -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white shadow-2xl outline-none">
+        <Dialog.Content className="fixed text-slate-900 left-1/2 top-1/2 z-50 w-full max-w-3xl 
+          -translate-x-1/2 -translate-y-1/2 
+          rounded-xl bg-white shadow-2xl outline-none 
+          max-h-[90vh] flex flex-col">
             <Toaster
               position="top-center"
               containerStyle={{
@@ -215,9 +212,10 @@ const handleLocalSubmit = async (e) => {
           </div>
 
           {/* BODY */}
+          <div className="overflow-y-auto px-6 py-4 flex-1">
           <form
             onSubmit={handleLocalSubmit}
-            className="p-6 grid grid-cols-2 gap-x-6 gap-y-5"
+            className="grid grid-cols-2 gap-x-6 gap-y-5"
           >
 
             {/* LEFT SIDE */}
@@ -434,7 +432,7 @@ const handleLocalSubmit = async (e) => {
               </div>
 
               {/* TIME */}
-              <div className="grid grid-cols-2 gap-3">
+              <div>
                 <div>
                   <label className="text-sm font-medium text-gray-700">
                     Start Time
@@ -446,22 +444,6 @@ const handleLocalSubmit = async (e) => {
                     value={form.startTime}
                     onChange={(e) =>
                       updateField("startTime", e.target.value)
-                    }
-                    className={inputClass}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700">
-                    End Time
-                  </label>
-
-                  <input
-                    type="time"
-                    required
-                    value={form.endTime}
-                    onChange={(e) =>
-                      updateField("endTime", e.target.value)
                     }
                     className={inputClass}
                   />
@@ -580,7 +562,8 @@ const handleLocalSubmit = async (e) => {
               </button>
 
             </div>
-          </form>
+            </form>
+          </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

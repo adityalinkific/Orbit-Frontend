@@ -68,13 +68,22 @@ const MeetingsSidebar = ({ meetings, onMeetingClick }) => {
           const start = new Date(`${meeting.date}T${meeting.startTime}`)
 
 
-          let status = "scheduled"
+         let status = "scheduled";
 
-          if (now >= start) {
-            status = "live"
+          let end;
+
+          if (meeting.repeatType && meeting.repeatType !== "none") {
+            end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
           } else {
-            status = "completed"
+            end = new Date(start.getTime() + 60 * 60 * 1000);
           }
+
+          if (now >= start && now <= end) {
+            status = "live";
+          } else if (now > end) {
+            status = "completed";
+          }
+
 
           return (
 

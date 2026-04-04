@@ -114,12 +114,94 @@ const copyLink = () => {
   }
 };
 
-
-
   const now = new Date();
   const start = new Date(`${meeting.date}T${meeting.startTime}`);
-  const end = new Date(`${meeting.date}T${meeting.endTime}`);
-  const isLive = now >= start && now <= end;
+
+  let end;
+
+  if (meeting.repeatType && meeting.repeatType !== "none") {
+    // 🔁 repeating → 2 hours window
+    end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+  } else {
+    // ⏱️ one-time → 1 hour
+    end = new Date(start.getTime() + 60 * 60 * 1000);
+  }
+
+  let isLive = false;
+
+  if (meeting.repeatType && meeting.repeatType !== "none") {
+    // repeating → check daily window
+    const todayStart = new Date();
+    todayStart.setHours(start.getHours(), start.getMinutes(), 0, 0);
+
+    const todayEnd = new Date(todayStart.getTime() + 2 * 60 * 60 * 1000);
+
+    isLive = now >= todayStart && now <= todayEnd;
+  } else {
+    // one-time
+    isLive = now >= start && now <= end;
+  }
+
+
+const handleJoinMeeting = () => {
+  if (!meeting.meetingLink) {
+    toast.error("No meeting link available");
+    return;
+  }
+
+  window.open(meeting.meetingLink, "_blank", "noopener,noreferrer");
+};
+
+let isUpcoming = false;
+let isEnded = false;
+
+if (meeting.repeatType && meeting.repeatType !== "none") {
+  const todayStart = new Date();
+  todayStart.setHours(start.getHours(), start.getMinutes(), 0, 0);
+
+  const todayEnd = new Date(todayStart.getTime() + 2 * 60 * 60 * 1000);
+
+  isUpcoming = now < todayStart;
+  isEnded = now > todayEnd;
+} else {
+  isUpcoming = now < start;
+  isEnded = now > end;
+}
+
+
+const getButtonState = () => {
+  if (isLive) {
+    return {
+      label: "Join Now",
+      className:
+        "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200",
+      disabled: false,
+    };
+  }
+
+  if (isUpcoming) {
+    return {
+      label: "Starts Soon",
+      className:
+        "bg-gray-200 text-gray-600 cursor-not-allowed",
+      disabled: true,
+    };
+  }
+
+  return {
+    label: "Meeting Ended",
+    className:
+      "bg-gray-100 text-gray-400 cursor-not-allowed",
+    disabled: true,
+  };
+};
+
+const btnState = getButtonState();
+
+
+
+
+
 
   return (
     <div className="min-h-screen bg-[#f8fafc] p-8">
@@ -159,7 +241,11 @@ const copyLink = () => {
             <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
               <Clock size={18} className="text-blue-500" />
               <span className="text-sm font-medium">
-                {meeting.startTime} – {meeting.endTime}
+                {meeting.startTime} 
+                <span className="text-xs text-gray-400 ml-1">
+                  ({meeting.repeatType !== "none" ? "2h window" : "1h duration"})
+                </span>
+
               </span>
             </div>
           </div>
@@ -179,11 +265,16 @@ const copyLink = () => {
           >
             <Trash2 size={18} />
           </button>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl flex items-center gap-2 shadow-lg shadow-blue-200 transition-all font-semibold">
+          <button
+            onClick={handleJoinMeeting}
+            disabled={btnState.disabled || !meeting.meetingLink}
+            className={`px-6 py-2 rounded-xl flex items-center gap-2 transition-all font-semibold ${btnState.className}`}
+          >
             <Video size={18} />
-            Join Meeting
+            {btnState.label}
           </button>
-        </div>
+
+                  </div>
       </header>
 
       {/* MAIN CONTENT GRID */}

@@ -7,12 +7,13 @@ import {
 import { getAllProjects } from "../../services/project.service";
 import { getAllTasksService } from "../../services/tasks.services";
 import { getAllMeetings } from "../../services/meeting.service";
+import { getAllUsersService } from "../../services/user.service";
 
 import useAuth from "../../hooks/useAuth";
 
 export default function Dashboard() {
   const { user } = useAuth();
-
+  const [users, setUsers] = useState([]);
   const [me, setMe] = useState(null);
   const [health, setHealth] = useState(null);
   const [projects, setProjects] = useState([]);
@@ -22,14 +23,18 @@ export default function Dashboard() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [meRes, healthRes, projRes, taskRes, meetRes] =
+        const [meRes, healthRes, projRes, taskRes, meetRes, userRes] =
           await Promise.all([
             meService(),
             healthService(),
             getAllProjects(),
             getAllTasksService(),
             getAllMeetings(),
+            getAllUsersService(),
           ]);
+
+        setUsers(userRes?.data || []);
+
 
         setMe(meRes?.data?.data);
         setHealth(healthRes?.data || healthRes);
@@ -46,6 +51,7 @@ export default function Dashboard() {
 
   /* ================= METRICS ================= */
   const totalProjects = projects.length;
+  const totalEmployees = users.length;
   const completedProjects = projects.filter(
     (p) => p.status === "completed"
   ).length;
@@ -65,6 +71,56 @@ export default function Dashboard() {
       me?.role?.role || user?.role?.role || user?.role || "employee";
     return r.replace("_", " ").toUpperCase();
   };
+  const colors = [
+  "bg-blue-500",
+  "bg-green-500",
+  "bg-purple-500",
+  "bg-orange-500",
+  "bg-pink-500",
+];
+
+const getColor = (i) => colors[i % colors.length];
+const formatTime = (time) => {
+  if (!time) return "--";
+  return time.slice(0, 5);
+};
+
+const getMeetingStatus = (m) => {
+  try {
+    const now = new Date();
+
+    const date = m.date || m.meeting_date;
+    const time = m.startTime || m.start_time;
+
+    if (!date || !time) return "scheduled";
+
+    // safer parsing
+    const [year, month, day] = date.split("-").map(Number);
+    const [hour, minute] = time.split(":").map(Number);
+
+    const start = new Date(year, month - 1, day, hour, minute);
+
+    let duration = 60; // default 1 hour
+
+    if (m.repeatType && m.repeatType !== "none") {
+      duration = 120; // 2 hours for repeating
+    }
+
+    const end = new Date(start.getTime() + duration * 60 * 1000);
+
+
+    if (now >= start && now <= end) return "live";
+    if (now > end) return "completed";
+    return "scheduled";
+  } catch (err) {
+    console.error("Meeting status error:", err);
+    return "scheduled";
+  }
+};
+
+
+
+
 
   return (
     <div className="p-6 bg-slate-50 min-h-screen">
@@ -80,7 +136,7 @@ export default function Dashboard() {
 
       {/* STATS */}
       <div className="grid grid-cols-4 gap-4 mb-6">
-        <StatCard title="Total Projects" value={totalProjects} />
+        <StatCard title="Total Employees" value={totalEmployees} />
         <StatCard title="Completed Projects" value={completedProjects} />
         <StatCard title="Ongoing Projects" value={ongoingProjects} />
 
@@ -126,9 +182,10 @@ export default function Dashboard() {
 
                 <div className="w-full h-2 bg-slate-200 rounded-full">
                   <div
-                    className="h-2 bg-blue-500 rounded-full"
+                    className={`h-2 rounded-full ${getColor(i)}`}
                     style={{ width: `${percent}%` }}
                   />
+
                 </div>
               </div>
             );
@@ -143,29 +200,51 @@ export default function Dashboard() {
             </h3>
           </div>
 
-          {meetings.slice(0, 3).map((m, i) => (
-            <div
-              key={i}
-              className="flex justify-between items-center mb-4"
-            >
-              <div>
-                <p className="font-medium text-sm">
-                  {m.title || "Meeting"}
-                </p>
-                <p className="text-xs text-slate-400">
-                  {m.location || "Room"}
-                </p>
-              </div>
-              <span className="text-xs text-slate-500">
-                {m.time || "--"}
-              </span>
-            </div>
-          ))}
+          {meetings.slice(0, 4).map((m, i) => {
+            const status = getMeetingStatus(m);
 
-          <button className="w-full mt-2 text-sm bg-slate-100 py-2 rounded-lg hover:bg-slate-200">
-            View All Meetings
+            return (
+              <div
+                key={i}
+                className="flex justify-between items-center mb-4 p-3 rounded-lg hover:bg-slate-50 transition"
+              >
+                <div>
+                  <p className="font-medium text-sm text-slate-800">
+                    {m.title || "Meeting"}
+                  </p>
+
+                  <p className="text-xs text-slate-400">
+                    {new Date(m.meeting_date).toLocaleDateString()}
+                  </p>
+                </div>
+
+                <div className="flex flex-col items-end gap-1">
+                  <span className="text-xs text-slate-500">
+                    {formatTime(m.start_time)}
+                  </span>
+
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                      status === "live"
+                        ? "bg-green-100 text-green-700"
+                        : status === "completed"
+                        ? "bg-gray-100 text-gray-600"
+                        : "bg-blue-100 text-blue-700"
+                    }`}
+                  >
+                    {status.toUpperCase()}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+
+
+          <button className="w-full mt-2 text-sm bg-blue-50 text-blue-600 py-2 rounded-lg hover:bg-blue-100 transition font-medium">
+            View All Meetings →
           </button>
-        </div>
+
+                  </div>
       </div>
 
       {/* BOTTOM GRID */}
