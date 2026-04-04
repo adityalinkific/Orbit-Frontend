@@ -1,12 +1,18 @@
 import { useEffect } from "react";
+import { useDispatch } from "react-redux";
 import AppRoutes from "./routes/AppRoutes";
-import { AuthProvider } from "./context/AuthContext";
 import { UIProvider } from "./context/UIContext";
 import { Toaster } from "react-hot-toast";
 import { healthService } from "./services/auth.service";
+import { bootstrapAuth } from "./store/slices/authSlice";
 
 export default function App() {
+  const dispatch = useDispatch();
+
   useEffect(() => {
+    // Bootstrap authentication on app start
+    dispatch(bootstrapAuth());
+
     // Run health check every 5 minutes (300,000 ms) in the background
     const intervalId = setInterval(async () => {
       try {
@@ -19,11 +25,9 @@ export default function App() {
   }, []);
 
   return (
-    <AuthProvider>
-      <UIProvider>
-          <Toaster position="top-right" reverseOrder={false} />
-        <AppRoutes />
-      </UIProvider>
-    </AuthProvider>
+    <UIProvider>
+        <Toaster position="top-right" reverseOrder={false} />
+      <AppRoutes />
+    </UIProvider>
   );
 }

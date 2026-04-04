@@ -101,7 +101,7 @@
 
 .orbit-auth {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
   font-family: Inter, system-ui, sans-serif;
 }
 
@@ -530,3 +530,141 @@
   font-size: 98px;
   cursor: pointer;
 }
+
+/* ===== RESPONSIVE DESIGN FOR MAC, IPAD & MOBILE ===== */
+
+.login-toast {
+  padding: 8px 14px;
+  font-size: 13px;
+  min-width: unset;
+  text-align: left;
+  border-radius: 8px;
+}
+
+@media (max-width: 1024px) {
+  .orbit-auth {
+    flex-direction: column;
+  }
+  
+  .orbit-auth-left {
+    padding: 50px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    min-height: 400px;
+  }
+  
+  .orbit-auth-left::before,
+  .orbit-auth-left::after {
+    width: 300px;
+    height: 300px;
+  }
+  
+  .orbit-brand {
+    justify-content: center;
+  }
+  
+  .orbit-auth-left h1 {
+    margin-top: 40px;
+    font-size: 40px;
+    line-height: 1.1;
+  }
+  
+  .orbit-auth-left p {
+    margin: 16px auto 0;
+  }
+
+  .orbit-features {
+    margin-top: 30px;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .orb1 {
+    width: 200px;
+    height: 200px;
+    top: 30px;
+    right: 20px;
+  }
+
+  .orb2 {
+    width: 200px;
+    height: 200px;
+    bottom: 30px;
+    left: 20px;
+  }
+
+  .orbit-auth-right {
+    padding: 60px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .orbit-auth-left {
+    padding: 40px 20px;
+  }
+
+  .orbit-auth-left h1 {
+    font-size: 32px;
+    margin-top: 30px;
+  }
+
+  .orbit-brand {
+    font-size: 28px;
+  }
+
+  .orbit-logo-card {
+    width: 60px;
+    height: 60px;
+    margin-right: 12px;
+  }
+
+  .orbit-logo-card img {
+    width: 50px;
+    height: 50px;
+  }
+
+  .orbit-features {
+    gap: 12px;
+  }
+
+  .feature-card {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+    border-radius: 12px;
+  }
+  
+  .feature-tag {
+    font-size: 10px;
+  }
+
+  .orbit-auth-right {
+    padding: 40px 16px;
+  }
+  
+  .orbit-form {
+    width: 100%;
+    max-width: 360px;
+  }
+
+  /* Simplify visuals on mobile for focus and performance */
+  .orb1, .orb2,
+  .orbit-auth-left::before,
+  .orbit-auth-left::after {
+    opacity: 0.15;
+    filter: blur(60px);
+  }
+
+  .login-toast {
+    top: 16px;
+    right: 16px;
+    left: auto;
+    width: max-content;
+    min-width: unset;
+  }
+}
