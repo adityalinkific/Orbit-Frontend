@@ -500,7 +500,7 @@ const handleLocalSubmit = async (e) => {
                         key={user.id}
                         type="button"
                         onClick={() => toggleAttendee(user)}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-gray-50
+                        className={`w-full cursor-pointer flex items-center justify-between px-3 py-2 text-sm hover:bg-gray-50
                           ${active ? "bg-blue-50" : ""}`}
                       >
                         <div className="flex items-center gap-2">
@@ -540,7 +540,7 @@ const handleLocalSubmit = async (e) => {
               <Dialog.Close asChild>
                 <button
                   type="button"
-                  className="px-4 py-2 text-sm border border-gray-200 rounded-md hover:bg-gray-50"
+                  className="px-4 py-2 text-sm border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50"
                 >
                   Cancel
                 </button>
@@ -549,7 +549,7 @@ const handleLocalSubmit = async (e) => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-5 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+                className="px-5 py-2 text-sm cursor-pointer rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
               >
                 {isSubmitting
                   ? "Saving..."

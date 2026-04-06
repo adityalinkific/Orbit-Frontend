@@ -57,40 +57,38 @@ const handleEditClick = () => {
 };
 
 
-const handleUpdateSubmit = async (e) => {
-  if (e) e.preventDefault();
-
+const handleUpdateSubmit = async (formData) => {
   try {
     setIsSaving(true);
 
-    if (form.startTime >= form.endTime) {
+    if (formData.startTime >= formData.endTime) {
       toast.error("End time must be after start time");
       return;
     }
 
     const payload = {
-      title: form.title,
-      description: form.description,
+      title: formData.title,
+      description: formData.description,
 
-      meeting_date: form.date,
+      meeting_date: formData.date,
 
-      start_time: formatTimeToUTCString(form.startTime),
+      start_time: formatTimeToUTCString(formData.startTime),
 
-      project_id: Number(form.project_id) || 0,
+      project_id: Number(formData.project_id) || 0,
 
       status: "Scheduled",
 
-      organizer_id: Number(form.organizer) || 0,
+      organizer_id: Number(formData.organizer) || 0,
 
       attendee_user_ids:
-        form.attendees?.map((p) => Number(p.id)) || [],
+        formData.attendees?.map((p) => Number(p.id)) || [],
 
       attendee_emails:
-        form.attendees?.map((p) => p.email).filter(Boolean) || [],
+        formData.attendees?.map((p) => p.email).filter(Boolean) || [],
 
-      generate_meeting_link: Boolean(form.generateLink),
+      generate_meeting_link: Boolean(formData.generateLink),
 
-      meeting_link: form.generateLink ? form.meetingLink : "",
+      meeting_link: formData.generateLink ? formData.meetingLink : "",
     };
 
     await onUpdate(payload);
@@ -104,6 +102,7 @@ const handleUpdateSubmit = async (e) => {
     setIsSaving(false);
   }
 };
+
 
 const copyLink = () => {
   if (meeting.meetingLink) {
@@ -254,21 +253,21 @@ const btnState = getButtonState();
         <div className="flex items-center gap-3">
           <button
             onClick={handleEditClick}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all font-medium text-gray-700"
+            className="flex items-center cursor-pointer gap-2 px-4 py-2 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all font-medium text-gray-700"
           >
             <Pencil size={16} />
             Edit
           </button>
           <button
             onClick={() => setConfirmOpen(true)}
-            className="p-2.5 border border-red-100 text-red-500 rounded-xl hover:bg-red-50 transition-all"
+            className="p-2.5 border cursor-pointer border-red-100 text-red-500 rounded-xl hover:bg-red-50 transition-all"
           >
             <Trash2 size={18} />
           </button>
           <button
             onClick={handleJoinMeeting}
             disabled={btnState.disabled || !meeting.meetingLink}
-            className={`px-6 py-2 rounded-xl flex items-center gap-2 transition-all font-semibold ${btnState.className}`}
+            className={`px-6 py-2 rounded-xl  flex items-center gap-2 transition-all font-semibold ${btnState.className}`}
           >
             <Video size={18} />
             {btnState.label}
@@ -346,7 +345,7 @@ const btnState = getButtonState();
               </span>
               <button 
                 onClick={copyLink}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                className="p-2 hover:bg-white/10 cursor-pointer rounded-lg transition-colors"
               >
                 <Copy size={16} />
               </button>

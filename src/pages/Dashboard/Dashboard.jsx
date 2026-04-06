@@ -118,6 +118,36 @@ const getMeetingStatus = (m) => {
   }
 };
 
+const formatDate = (date) => {
+  if (!date) return "--";
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const getInitials = (text) => {
+  if (!text) return "NA";
+  const words = text.split(" ");
+  return words.length > 1
+    ? words[0][0] + words[1][0]
+    : words[0][0];
+};
+
+const getTaskStatus = (dueDate) => {
+  if (!dueDate) return "upcoming";
+
+  const today = new Date();
+  const due = new Date(dueDate);
+
+  const diff = (due - today) / (1000 * 60 * 60 * 24);
+
+  if (diff < 0) return "overdue";
+  if (diff <= 2) return "due_soon";
+  return "upcoming";
+};
+
 
 
 
@@ -240,7 +270,7 @@ const getMeetingStatus = (m) => {
           })}
 
 
-          <button className="w-full mt-2 text-sm bg-blue-50 text-blue-600 py-2 rounded-lg hover:bg-blue-100 transition font-medium">
+          <button className="w-full cursor-pointer mt-2 text-sm bg-blue-50 text-blue-600 py-2 rounded-lg hover:bg-blue-100 transition font-medium">
             View All Meetings →
           </button>
 
@@ -250,21 +280,55 @@ const getMeetingStatus = (m) => {
       {/* BOTTOM GRID */}
       <div className="grid grid-cols-3 gap-6 mt-6">
         {/* TASKS */}
+       {/* TASKS - DEADLINE APPROACHING */}
         <div className="col-span-2 bg-white rounded-xl p-5 shadow-sm">
-          <h3 className="font-semibold mb-4 text-slate-700">
-            Tasks Overview
-          </h3>
+          {/* HEADER */}
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-semibold text-slate-800">
+              Deadline Approaching
+            </h3>
+            <button className="text-sm cursor-pointer text-blue-500 hover:underline">
+              View All
+            </button>
+          </div>
 
-          {tasks.slice(0, 4).map((t, i) => (
-            <div
-              key={i}
-              className="flex justify-between mb-3 text-sm"
-            >
-              <span>{t.title}</span>
-              <span className="text-blue-500">{t.status}</span>
-            </div>
-          ))}
+          {/* TASK LIST */}
+          <div className="space-y-6">
+            {tasks.slice(0, 4).map((task, i) => {
+              const status = getTaskStatus(task.due_date);
+              const initials = getInitials(task.title);
+
+              return (
+                <div
+                  key={i}
+                  className="flex items-center justify-between"
+                >
+                  {/* LEFT */}
+                  <div className="flex items-center gap-3">
+                    {/* AVATAR */}
+                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-200 text-slate-600 text-sm font-semibold">
+                      {initials}
+                    </div>
+
+                    {/* TEXT */}
+                    <div>
+                      <p className="text-sm font-medium text-slate-800">
+                        {task.title}
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        Due: {formatDate(task.due_date)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* STATUS BADGE */}
+                  <StatusBadge status={status} />
+                </div>
+              );
+            })}
+          </div>
         </div>
+
 
         {/* APPROVAL / HEALTH */}
         <div className="bg-white rounded-xl p-5 shadow-sm">
@@ -307,6 +371,8 @@ const getMeetingStatus = (m) => {
 }
 
 /* ================= COMPONENT ================= */
+/* ================= COMPONENTS ================= */
+
 function StatCard({ title, value }) {
   return (
     <div className="bg-white rounded-xl p-4 shadow-sm">
@@ -315,3 +381,26 @@ function StatCard({ title, value }) {
     </div>
   );
 }
+
+function StatusBadge({ status }) {
+  const styles = {
+    overdue: "bg-red-100 text-red-600",
+    due_soon: "bg-orange-100 text-orange-600",
+    upcoming: "bg-blue-100 text-blue-600",
+  };
+
+  const labels = {
+    overdue: "OVERDUE",
+    due_soon: "DUE SOON",
+    upcoming: "UPCOMING",
+  };
+
+  return (
+    <span
+      className={`text-xs px-3 py-1 rounded-sm font-medium ${styles[status]}`}
+    >
+      {labels[status]}
+    </span>
+  );
+}
+

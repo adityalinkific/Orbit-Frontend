@@ -506,7 +506,7 @@ if (currentHour >= firstHour && currentHour <= lastHour) {
 
   <button
     onClick={onScheduleClick}
-    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+    className="flex items-center cursor-pointer gap-2 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
   >
     + Schedule Meeting
   </button>
@@ -517,15 +517,15 @@ if (currentHour >= firstHour && currentHour <= lastHour) {
 
           <button
             onClick={goToToday}
-            className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors border border-gray-200 hover:border-blue-100 bg-white"
+            className="px-3 py-1.5 text-sm font-medium text-gray-600 cursor-pointer hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors border border-gray-200 hover:border-blue-100 bg-white"
           >
             Today
           </button>
           <div className="flex bg-gray-50 border border-gray-200 rounded-lg p-0.5">
-            <button onClick={prevPeriod} className="p-1.5 rounded-md hover:bg-white hover:shadow-sm text-gray-600 transition-all">
+            <button onClick={prevPeriod} className="p-1.5 cursor-pointer rounded-md hover:bg-white hover:shadow-sm text-gray-600 transition-all">
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <button onClick={nextPeriod} className="p-1.5 rounded-md hover:bg-white hover:shadow-sm text-gray-600 transition-all">
+            <button onClick={nextPeriod} className="p-1.5 cursor-pointer rounded-md hover:bg-white hover:shadow-sm text-gray-600 transition-all">
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
@@ -536,8 +536,8 @@ if (currentHour >= firstHour && currentHour <= lastHour) {
                 onClick={() => setViewMode(mode)}
                 className={`px-3 py-1.5 rounded-md capitalize ${
                   viewMode === mode
-                    ? "bg-white text-blue-600 shadow-sm"
-                    : "text-gray-600 hover:bg-white/60"
+                    ? "bg-white text-blue-600 shadow-sm cursor-pointer"
+                    : "text-gray-600 hover:bg-white/60 cursor-pointer"
                 }`}
               >
                 {mode}
