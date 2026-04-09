@@ -8,6 +8,8 @@ import { getAllProjects } from "../../services/project.service";
 import { getAllTasksService } from "../../services/tasks.services";
 import { getAllMeetings } from "../../services/meeting.service";
 import { getAllUsersService } from "../../services/user.service";
+import { useNavigate } from "react-router-dom";
+
 
 import useAuth from "../../hooks/useAuth";
 import { Calendar } from "lucide-react";
@@ -23,6 +25,9 @@ export default function Dashboard() {
   const [meetings, setMeetings] = useState([]);
 
   const [loading, setLoading] = useState(true);
+  const [showAllTasks, setShowAllTasks] = useState(false);
+
+  const navigate = useNavigate();
 
 
 
@@ -59,6 +64,12 @@ export default function Dashboard() {
   }, []);
 
   if (loading) return <DashboardSkeleton />;
+
+ const handleToggleTasks = () => {
+  setShowAllTasks((prev) => !prev);
+};
+
+
 
   /* ================= METRICS ================= */
   const totalProjects = projects.length;
@@ -203,9 +214,13 @@ const getTaskStatus = (dueDate) => {
             <h3 className="font-medium text-slate-900">
               Project Progress
             </h3>
-            <span className="text-xs font-medium text-blue-500 cursor-pointer">
+            <span
+              onClick={() => navigate("/projects")}
+              className="text-xs font-medium text-blue-500 cursor-pointer"
+            >
               Full Analytics
             </span>
+
           </div>
 
           {projects.slice(0, 5).map((p, i) => {
@@ -284,9 +299,13 @@ const getTaskStatus = (dueDate) => {
           })}
 
 
-          <button className="w-full cursor-pointer mt-2 text-sm bg-blue-50 text-blue-600 py-2 rounded-lg hover:bg-blue-100 transition font-medium">
+          <button
+            onClick={() => navigate("/meetings")}
+            className="w-full cursor-pointer mt-2 text-sm bg-blue-50 text-blue-600 py-2 rounded-lg hover:bg-blue-100 transition font-medium"
+          >
             View All Meetings →
           </button>
+
 
                   </div>
       </div>
@@ -301,14 +320,18 @@ const getTaskStatus = (dueDate) => {
             <h3 className="font-medium text-slate-900">
               Deadline Approaching
             </h3>
-            <button className="text-xs font-medium text-blue-500 cursor-pointer">
-              View All
+            <button
+              onClick={handleToggleTasks}
+              className="text-xs font-medium text-blue-500 cursor-pointer"
+            >
+              {showAllTasks ? "View Less" : "View All"}
             </button>
+
           </div>
 
           {/* TASK LIST */}
           <div className="space-y-6">
-            {tasks.slice(0, 4).map((task, i) => {
+            {(showAllTasks ? tasks : tasks.slice(0, 4)).map((task, i) => {
               const status = getTaskStatus(task.due_date);
               const initials = getInitials(task.title);
 

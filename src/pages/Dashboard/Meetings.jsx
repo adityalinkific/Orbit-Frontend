@@ -46,6 +46,8 @@ const Meetings = () => {
     generateLink: false,
     meetingLink: "",
     sendInvite: false,
+    repeatType: "none",
+    repeatDay: null,
 
   });
 
@@ -67,7 +69,11 @@ const Meetings = () => {
         date: m.meeting_date,
 
         startTime: m.start_time?.slice(0, 5) || "",
-         repeatType: m.repeat_type || "none",
+         repeatType: m.repeat || "none",
+          repeatDay: m.day_of_week
+            ? ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
+                .indexOf(m.day_of_week)
+            : null,
 
           participants:
           m.attendees?.map((a) => ({
@@ -114,41 +120,61 @@ const Meetings = () => {
   date.setUTCSeconds(0);
   date.setUTCMilliseconds(0);
 
-  return date.toISOString().split("T")[1]; 
-  // 👉 "13:41:00.000Z"
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`;
 };
 
 
   /* ================= CREATE / UPDATE ================= */
+
+  const getDayName = (dayNumber) => {
+  const days = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+  return days[dayNumber] || null;
+};
+
 const handleSubmit = async (formData) => {
   setIsSubmitting(true);
 
   try {
+    console.log("🧠 repeatType:", formData.repeatType);
+    console.log("🧠 repeatDay:", formData.repeatDay);
 
-    const payload = {
-      title: formData.title,
-      description: formData.description,
 
-      meeting_date: formData.date,
+const payload = {
+  title: formData.title,
+  description: formData.description,
+  meeting_date: formData.date,
+  start_time: formatTimeToUTCString(formData.startTime),
 
-      start_time: formatTimeToUTCString(formData.startTime),
+  project_id: formData.project_id || null,
 
-      project_id: Number(formData.project_id) || 0,
+  status: "Scheduled",
 
-      status: "Scheduled",
+  // ✅ FIXED
+  organizer_id: Number(formData.organizer),
 
-      organizer_id: Number(formData.organizer) || 0,
+  attendee_user_ids: formData.attendees?.map(u => Number(u.id)) || [],
+  attendee_emails: formData.attendees?.map(u => u.email).filter(Boolean) || [],
 
-      attendee_user_ids:
-        formData.attendees?.map((u) => Number(u.id)) || [],
+  generate_meeting_link: Boolean(formData.generateLink),
+  meeting_link: formData.generateLink ? formData.meetingLink : null,
 
-      attendee_emails:
-        formData.attendees?.map((u) => u.email).filter(Boolean) || [],
+  repeat: formData.repeatType !== "none" ? formData.repeatType : null,
 
-      generate_meeting_link: Boolean(formData.generateLink),
+  // ✅ ONLY send if weekly
+  day_of_week:
+    formData.repeatType === "weekly"
+      ? getDayName(formData.repeatDay)
+      : null,
+};
 
-      meeting_link: formData.generateLink ? formData.meetingLink : "",
-    };
 
     console.log("✅ FINAL PAYLOAD", payload);
 
@@ -182,6 +208,8 @@ const handleSubmit = async (formData) => {
   endTime: timeRange?.endTime || "10:00",
   attendees: [],
   project_id: "", 
+  repeatType: "none",
+  repeatDay: null,
 });
 
 
@@ -222,10 +250,62 @@ const handleSubmit = async (formData) => {
       date: "",
       startTime: "09:00",
       endTime: "10:00",
+      repeatType: "none",
+      repeatDay: null,
     });
     setModalMode("create");
     setShowModal(true);
   };
+
+  const expandRecurringMeetings = (meetings) => {
+  const expanded = [];
+
+  meetings.forEach((m) => {
+    expanded.push(m);
+
+    // WEEKLY
+    if (m.repeatType === "weekly" && m.repeatDay !== null) {
+      for (let i = 1; i <= 12; i++) {
+        const next = new Date(m.date);
+        next.setDate(next.getDate() + i * 7);
+
+        expanded.push({
+          ...m,
+          id: `${m.id}-rec-${i}`,
+          date: next.toISOString().split("T")[0],
+          isRecurring: true,
+        });
+      }
+    }
+
+    // WEEKDAYS
+    if (m.repeatType === "weekdays") {
+      for (let i = 1; i <= 20; i++) {
+        const next = new Date(m.date);
+        next.setDate(next.getDate() + i);
+
+        const day = next.getDay();
+
+        if (day !== 0 && day !== 6) {
+          expanded.push({
+            ...m,
+            id: `${m.id}-rec-${i}`,
+            date: next.toISOString().split("T")[0],
+            isRecurring: true,
+          });
+        }
+      }
+    }
+  });
+
+  return expanded;
+};
+
+const meetingsWithRecurring = useMemo(
+  () => expandRecurringMeetings(meetings),
+  [meetings]
+);
+
 
   /* ================= FILTER ================= */
   const filteredMeetings = useMemo(() => {
@@ -290,14 +370,14 @@ const handleSubmit = async (formData) => {
             <MeetingsSidebarSkeleton />
           ) : (
                     <MeetingsSidebar
-                      meetings={meetings}
+                      meetings={meetingsWithRecurring}
                       onMeetingClick={(m) => setSelectedMeeting(m)}
                     />
           )}
 
           <div className="flex-1 p-6 flex flex-col">
             <Calendar
-              meetings={filteredMeetings}
+              meetings={meetingsWithRecurring}
               filters={filters}
               setFilters={setFilters}
               onMeetingClick={handleMeetingClick}

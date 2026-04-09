@@ -44,6 +44,7 @@ const adminMenu = {
     { name: "Task", icon: <MdOutlineTaskAlt size={20} />, path: "/task" },
     { name: "People", icon: <HiOutlineUsers size={20} />, path: "/people" },
     { name: "Departments", icon: <HiOutlineOfficeBuilding size={20} />, path: "/departments" },
+      { name: "Projects", icon: <HiOutlineFolder size={20} />, path: "/projects" },
     { name: "Meetings", icon: <FaRegCalendar size={20} />, path: "/meetings" },
     { name: "Settings", icon: <HiOutlineCog size={20} />, path: "/settings" },
   ],

@@ -304,8 +304,9 @@ const handleLocalSubmit = async (e) => {
                   className={inputClass}
                 >
                   <option value="none">Does not repeat</option>
-                  <option value="weekdays">Every weekday (Mon–Sat)</option>
-                  <option value="weekly">Every week (same day)</option>
+                  <option value="weekly">Every week</option>
+                  <option value="weekdays">Every weekday</option>
+
                 </select>
 
                 {/* Weekly day selector */}
