@@ -7,6 +7,8 @@ import Loader from "../../components/common/Loader";
 import { GiDna1 } from "react-icons/gi";
 import { MdOutlineLink } from "react-icons/md";
 import { FaRocket } from "react-icons/fa";
+import api from "../../services/api";
+
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -31,7 +33,11 @@ export default function Login() {
       const storage = rememberMe ? localStorage : sessionStorage;
       storage.setItem("token", res.token);
 
+      // Force axios to use latest token immediately
+      api.defaults.headers.common["Authorization"] = `Bearer ${res.token}`;
+
       const meRes = await meService();
+
       const user = meRes?.data?.data;
 
       if (!user) {

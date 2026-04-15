@@ -20,6 +20,7 @@ import Settings from "../pages/Dashboard/Settings";
 import NotFound from "../pages/NotFound";
 import useAuth from "../hooks/useAuth";
 import Meetings from "../pages/Dashboard/Meetings";
+import ProjectDetails from "../components/projects/ProjectDetails";
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -58,6 +59,7 @@ export default function AppRoutes() {
         <Route path="/audit" element={<SystemAudit />} />
         <Route path="/assistant" element={<Assistant />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/projects/:id" element={<ProjectDetails />} />
       </Route>
 
       {/* ---------- FALLBACK ---------- */}

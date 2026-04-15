@@ -4,17 +4,18 @@ import { request } from "./api";
 export const loginService = async (data) => {
   const res = await request("/auth/login", {
     method: "POST",
-    body: JSON.stringify(data),
+    body: data,
   });
 
   if (res.data?.status === false || res.status >= 400) {
     throw new Error(res.data?.message || "Login failed");
   }
 
-  const token =
-    res.data?.data?.access_token ||
+   const token =
+    res.data?.data?.token ||       
+    res.data?.token ||
     res.data?.access_token ||
-    res.data?.token;
+    res.data?.data?.access_token;
 
   if (!token) {
     throw new Error("No token found in login response");
@@ -69,10 +70,16 @@ export const registerService = async (data) => {
 
 /* ---------------- ME ---------------- */
 export const meService = async () => {
+  const token =
+    localStorage.getItem("token") ||
+    sessionStorage.getItem("token");
+    console.log("SENDING TOKEN 👉", `Bearer ${token}`);
+
   return request("/auth/me", {
     method: "GET",
   });
 };
+
 
 /* ---------------- HEALTH ---------------- */
 export const healthService = async () => {

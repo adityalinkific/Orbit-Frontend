@@ -19,3 +19,9 @@ export const updateProjectService = async (projectId, payload) => {
   );
   return res.data;
 };
+
+/* ---------------- GET PROJECT BY ID ---------------- */
+export const getProjectById = async (id) => {
+  const res = await api.get(`/projects/project-detail/${id}`);
+  return res.data?.data;
+};

@@ -1,4 +1,7 @@
+import { useNavigate } from "react-router-dom";
+
 export default function ProjectCard({ project }) {
+    const navigate = useNavigate();
   const {
     name,
     description,
@@ -18,7 +21,7 @@ export default function ProjectCard({ project }) {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition">
+    <div  onClick={() => navigate(`/projects/${project.id}`)} className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition">
       
       {/* TOP BADGES */}
       <div className="flex items-center justify-between mb-3">
