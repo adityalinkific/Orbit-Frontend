@@ -1,15 +1,54 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Share2, Plus, Filter, MoreHorizontal, X, Zap } from "lucide-react";
-import { getProjectById } from "../../services/project.service";
+import { Share2, Plus, Filter, MoreHorizontal, X, Zap, Upload } from "lucide-react";
+import { getProjectById, updateProjectService, uploadProjectDocument } from "../../services/project.service";
+import { getDepartments } from "../../services/department.service";
+import { getAllUsersService } from "../../services/user.service";
+import ProjectModal from "./ProjectModal";
 
 export default function ProjectDetails() {
   const { id } = useParams();
   const [project, setProject] = useState(null);
   const [activeTab, setActiveTab] = useState("Ongoing");
+  const [documents, setDocuments] = useState([]);
+  const [uploading, setUploading] = useState(false);
+
+  const [openModal, setOpenModal] = useState(false);
+  const [departments, setDepartments] = useState([]);
+  const [users, setUsers] = useState([]);
+
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    department_id: "",
+    owner_id: "",
+    start_date: "",
+    end_date: "",
+  });
+
+  const fetchDepartments = async () => {
+  try {
+    const data = await getDepartments();
+    setDepartments(data);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+const fetchUsers = async () => {
+  try {
+    const res = await getAllUsersService();
+    setUsers(res.data || []);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
 
   useEffect(() => {
     fetchProject();
+    fetchDepartments();
+    fetchUsers();
   }, [id]);
 
 const fetchProject = async () => {
@@ -21,6 +60,9 @@ const fetchProject = async () => {
       name: data.name,
       description: data.description,
       department_id: data.department_id,
+      owner_id: data.owner_id,            
+      start_date: data.start_date,        
+      end_date: data.end_date,   
 
       // ✅ REAL DATA
       completion: data.progress || 0,
@@ -41,6 +83,62 @@ const fetchProject = async () => {
     console.error(err);
   }
 };
+
+const handleFileUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  try {
+    setUploading(true);
+
+    const uploaded = await uploadProjectDocument(project.id, file);
+
+    setDocuments((prev) => [uploaded, ...prev]);
+
+  } catch (err) {
+    console.error(err);
+    alert("Upload failed");
+  } finally {
+    setUploading(false);
+  }
+};
+
+const handleSubmit = async () => {
+  try {
+    if (!formData.name || !formData.department_id || !formData.owner_id) {
+      alert("Name, Department & Owner required");
+      return;
+    }
+
+    const payload = {
+      name: formData.name,
+      description: formData.description,
+      department_id: Number(formData.department_id),
+      owner_id: Number(formData.owner_id),
+      start_date: formData.start_date
+        ? new Date(formData.start_date).toISOString()
+        : null,
+      end_date: formData.end_date
+        ? new Date(formData.end_date).toISOString()
+        : null,
+
+
+      is_completed: false, 
+    };
+
+    await updateProjectService(project.id, payload);
+
+    alert("Project updated successfully");
+
+    setOpenModal(false);
+    fetchProject(); // refresh UI
+  } catch (err) {
+    console.error(err);
+    alert("Update failed");
+  }
+};
+
+
 
 const getProjectStatus = (p) => {
   if (p.is_completed) return "completed";
@@ -159,12 +257,28 @@ const formatTimeline = (start, end) => {
           </div>
 
           <div className="flex gap-3">
-            <button className="border border-gray-300 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
-              <Share2 size={16} /> Share
-            </button>
-            <button className="bg-[#1D4ED8] hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors">
+            <button
+              onClick={() => {
+                setFormData({
+                  name: project.name,
+                  description: project.description,
+                  department_id: project.department_id || "",
+                  owner_id: project.owner_id || "",
+                  start_date: project.start_date
+                    ? project.start_date.split("T")[0]
+                    : "",
+                  end_date: project.end_date
+                    ? project.end_date.split("T")[0]
+                    : "",
+                });
+
+                setOpenModal(true);
+              }}
+              className="bg-[#1D4ED8] hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold"
+            >
               Manage Project
             </button>
+
           </div>
         </div>
 
@@ -236,8 +350,79 @@ const formatTimeline = (start, end) => {
             ))}
           </div>
         </div>
+        {/* DOCUMENTS SECTION */}
+        <div className="mb-10">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-[11px] font-bold text-slate-400 tracking-widest uppercase">
+              Project Documents
+            </h3>
+
+            <label className="text-xs font-bold text-gray-700 border border-gray-300 px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-gray-50">
+              <Upload size={14} /> Upload Document
+              <input
+                type="file"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+            </label>
+          </div>
+
+          <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+            {/* HEADER */}
+            <div className="grid grid-cols-5 text-xs font-semibold text-gray-400 px-6 py-3 border-b">
+              <span className="col-span-2">NAME</span>
+              <span>TYPE</span>
+              <span>UPLOADED BY</span>
+              <span>DATE</span>
+            </div>
+
+            {/* ROWS */}
+            {documents.length === 0 ? (
+              <p className="p-6 text-sm text-gray-400">No documents uploaded</p>
+            ) : (
+              documents.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="grid grid-cols-5 px-6 py-4 text-sm border-b last:border-0 items-center"
+                >
+                  <span className="col-span-2 font-medium text-gray-800">
+                    {doc.file_name}
+                  </span>
+
+                  <span className="text-xs bg-gray-100 px-2 py-1 rounded w-fit">
+                    {doc.file_name.split(".").pop().toUpperCase()}
+                  </span>
+
+                  <span className="text-gray-500">
+                    User #{doc.uploaded_by}
+                  </span>
+
+                  <span className="text-gray-400">
+                    {new Date(doc.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+
+          {uploading && (
+            <p className="text-xs text-blue-500 mt-2">Uploading...</p>
+          )}
+        </div>
+
 
       </div>
+      <ProjectModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        onSubmit={handleSubmit}
+        formData={formData}
+        setFormData={setFormData}
+        departments={departments}
+        users={users}
+        editingProject={project}
+      />
+
     </div>
   );
 }

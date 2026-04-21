@@ -4,11 +4,14 @@ import { getAllProjects,  updateProjectService, createProjectService, getDashboa
 import { getDepartments } from "../../services/department.service";
 
 import ProjectCard from "../../components/projects/ProjectCard";
+import { getAllUsersService } from "../../services/user.service";
+import ProjectModal from "../../components/projects/ProjectModal";
 
 export default function Projects() {
   const [tab, setTab] = useState("active");
   const [openModal, setOpenModal] = useState(false);
   const [metrics, setMetrics] = useState(null);
+  const [users, setUsers] = useState([]);
 
    const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,10 +20,14 @@ export default function Projects() {
   const [editingProject, setEditingProject] = useState(null);
 
   const [formData, setFormData] = useState({
-  name: "",
-  description: "",
-  department_id: "",
-});
+    name: "",
+    description: "",
+    department_id: "",
+    owner_id: "",
+    start_date: "",
+    end_date: "",
+  });
+
 
 const handleChange = (e) => {
   const { name, value } = e.target;
@@ -30,47 +37,74 @@ const handleChange = (e) => {
   }));
 };
 
-const handleEdit = (project) => {
-  setEditingProject(project);
-  setFormData({
-    name: project.name,
-    description: project.description,
-    department_id: project.department_id || "",
-  });
-  setOpenModal(true);
-};
+  const handleEdit = (project) => {
+    setEditingProject(project);
+
+    setFormData({
+      name: project.name,
+      description: project.description,
+      department_id: project.department_id || "",
+      owner_id: project.owner_id || "",
+      start_date: project.start_date
+        ? project.start_date.split("T")[0]
+        : "",
+      end_date: project.end_date
+        ? project.end_date.split("T")[0]
+        : "",
+    });
+
+    setOpenModal(true);
+  };
 
 
-const handleSubmit = async () => {
-  try {
-    if (!formData.name || !formData.department_id) {
-      alert("Name & Department required");
-      return;
+
+  const handleSubmit = async () => {
+    try {
+      if (!formData.name || !formData.department_id || !formData.owner_id) {
+        alert("Name, Department & Owner required");
+        return;
+      }
+
+      const payload = {
+        name: formData.name,
+        description: formData.description,
+        department_id: Number(formData.department_id),
+        owner_id: Number(formData.owner_id),
+        start_date: formData.start_date
+          ? new Date(formData.start_date).toISOString()
+          : null,
+        end_date: formData.end_date
+          ? new Date(formData.end_date).toISOString()
+          : null,
+        is_completed: false,
+      };
+
+      if (editingProject) {
+        await updateProjectService(editingProject.id, payload);
+        alert("Project updated successfully");
+      } else {
+        await createProjectService(payload);
+        alert("Project created successfully");
+      }
+
+      setOpenModal(false);
+      setFormData({
+        name: "",
+        description: "",
+        department_id: "",
+        owner_id: "",
+        start_date: "",
+        end_date: "",
+      });
+      setEditingProject(null);
+
+      fetchProjects();
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong");
     }
+  };
 
-    const payload = {
-      ...formData,
-      department_id: Number(formData.department_id),
-    };
-
-    if (editingProject) {
-      await updateProjectService(editingProject.id, payload);
-      alert("Project updated successfully");
-    } else {
-      await createProjectService(payload);
-      alert("Project created successfully");
-    }
-
-    setOpenModal(false);
-    setFormData({ name: "", description: "", department_id: "" });
-    setEditingProject(null);
-
-    fetchProjects();
-  } catch (err) {
-    console.error(err);
-    alert("Something went wrong");
-  }
-};
 
 
 
@@ -123,6 +157,20 @@ const handleSubmit = async () => {
   }
 };
 
+const fetchUsers = async () => {
+  try {
+    const res = await getAllUsersService();
+
+    setUsers(res.data || []); 
+
+  } catch (err) {
+    console.error("Failed to fetch users", err);
+    setUsers([]); // fallback safety
+  }
+};
+
+
+
   const fetchMetrics = async () => {
   try {
     const data = await getDashboardMetrics();
@@ -150,6 +198,7 @@ const getDepartmentName = (id) => {
 useEffect(() => {
   fetchDepartments();
   fetchMetrics();
+  fetchUsers(); 
 }, []);
 
 useEffect(() => {
@@ -205,7 +254,19 @@ useEffect(() => {
         </button>
 
         <button
-          onClick={() => setOpenModal(true)}
+          onClick={() => {
+            setEditingProject(null);
+            setFormData({
+              name: "",
+              description: "",
+              department_id: "",
+              owner_id: "",
+              start_date: "",
+              end_date: "",
+            });
+            setOpenModal(true);
+          }}
+
           className="flex gap-1 text-sm items-center px-4 py-1.5 font-medium rounded-sm bg-[#005fff] text-white cursor-pointer"
         >
           <Plus size={16} />
@@ -278,141 +339,20 @@ useEffect(() => {
 
 
       {/* MODAL */}
-      {openModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-          <div className="relative w-full max-w-lg bg-white rounded-xl shadow-xl p-6">
-            
-            {/* CLOSE BUTTON */}
-            <button
-              onClick={() => setOpenModal(false)}
-              className="absolute right-4 top-4 text-gray-400 hover:text-gray-600"
-            >
-              <X size={18} />
-            </button>
+      <ProjectModal
+        open={openModal}
+        onClose={() => {
+          setOpenModal(false);
+          setEditingProject(null);
+        }}
+        onSubmit={handleSubmit}
+        formData={formData}
+        setFormData={setFormData}
+        departments={departments}
+        users={users}
+        editingProject={editingProject}
+      />
 
-            {/* TITLE */}
-            <h2 className="text-lg font-semibold text-gray-900">
-              Create Project
-            </h2>
-            <p className="text-sm text-gray-500 mt-1 mb-4">
-              Define a new enterprise initiative with its owner, scope and timeline.
-            </p>
-
-            {/* FORM */}
-            <div className="space-y-4">
-              
-              {/* PROJECT NAME */}
-              <div>
-                <label className="text-xs text-gray-500 font-medium">
-                  PROJECT NAME
-                </label>
-                <input
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  type="text"
-                  placeholder="e.g. Project Quantum Leap"
-                  className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                />
-                              </div>
-
-              {/* ROW */}
-              <div className="grid grid-cols-2 gap-4">
-                
-                <div>
-                  <label className="text-xs text-gray-500 font-medium">
-                    DEPARTMENT
-                  </label>
-                  <select
-                    name="department_id"
-                    value={formData.department_id}
-                    onChange={handleChange}
-                    className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                  >
-                    <option value="">Select Dept</option>
-
-                    {departments.map((dept) => (
-                      <option key={dept.id} value={dept.id}>
-                        {dept.name}
-                      </option>
-                    ))}
-                  </select>
-
-                </div>
-
-                <div>
-                  <label className="text-xs text-gray-500 font-medium">
-                    OWNER
-                  </label>
-                  <select className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
-                    <option>Assign Owner</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* DATE ROW */}
-              <div className="grid grid-cols-2 gap-4">
-                
-                <div>
-                  <label className="text-xs text-gray-500 font-medium">
-                    START DATE
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs text-gray-500 font-medium">
-                    END DATE
-                  </label>
-                  <input
-                    type="date"
-                    className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                  />
-                </div>
-              </div>
-
-              {/* DESCRIPTION */}
-              <div>
-                <label className="text-xs text-gray-500 font-medium">
-                  DESCRIPTION
-                </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows={3}
-                  placeholder="Brief summary..."
-                  className="mt-1 w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                />
-
-              </div>
-            </div>
-
-            {/* FOOTER */}
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => setOpenModal(false)}
-                className="text-sm text-gray-500 hover:text-gray-700"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={handleSubmit}
-                className="bg-blue-600 text-white text-sm px-4 py-2 rounded-md hover:bg-blue-700"
-              >
-                {editingProject ? "Update Project" : "Create Project"}
-              </button>
-
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -31,3 +31,19 @@ export const getDashboardMetrics = async () => {
   return res.data?.data;
 };
 
+export const uploadProjectDocument = async (projectId, file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await api.post(
+    `/projects/${projectId}/documents`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  return res.data?.data;
+};
