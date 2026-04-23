@@ -53,3 +53,10 @@ export const deleteProjectService = async (projectId) => {
   const res = await api.delete(`/projects/delete-project/${projectId}`);
   return res.data;
 };
+
+export const removeProjectMember = async (projectId, memberId) => {
+  const res = await api.delete(
+    `/projects/${projectId}/members/${memberId}`
+  );
+  return res.data;
+};

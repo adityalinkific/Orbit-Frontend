@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Share2, Plus, Filter, MoreHorizontal, X, Zap, Upload, Trash2, Calendar, Eye, Trash } from "lucide-react";
-import { deleteProjectService, getProjectById, updateProjectService, uploadProjectDocument } from "../../services/project.service";
+import { deleteProjectService, getProjectById, removeProjectMember, updateProjectService, uploadProjectDocument } from "../../services/project.service";
 import { getDepartments } from "../../services/department.service";
 import { getAllUsersService } from "../../services/user.service";
 import ProjectModal from "./ProjectModal";
@@ -58,11 +58,17 @@ const fetchUsers = async () => {
 };
 
 
-  useEffect(() => {
+useEffect(() => {
+  fetchDepartments();
+  fetchUsers();
+}, []);
+
+useEffect(() => {
+  if (users.length && departments.length) {
     fetchProject();
-    fetchDepartments();
-    fetchUsers();
-  }, [id]);
+  }
+}, [id, users, departments]);
+
 
 const fetchProject = async () => {
   try {
@@ -88,13 +94,17 @@ const fetchProject = async () => {
       spillover: 0,
       tasks: [],
 
-      // ✅ FIX HERE
-      team: (data.members || []).map((member) => ({
-        id: member.id,
-        name: member.name || getUserName(member.user_id),
-        role: member.role || "Member",
-        dept: getDepartmentName(member.department_id),
-      })),
+      // ✅ FIXED
+      team: (data.members || []).map((member) => {
+        const user = users.find((u) => u.id === member.user_id);
+
+        return {
+          id: member.user_id, // ✅ IMPORTANT FIX
+          name: user?.name || "Unknown",
+          role: member.role || "Member",
+          dept: getDepartmentName(user?.department_id),
+        };
+      }),
     });
 
     setDocuments(
@@ -106,11 +116,11 @@ const fetchProject = async () => {
         file_url: doc.file_url,
       }))
     );
-
   } catch (err) {
     console.error(err);
   }
 };
+
 
 
 const getUserName = (id) => {
@@ -334,6 +344,23 @@ const renderPreview = (doc) => {
   );
 };
 
+const handleRemoveMember = async (memberId) => {
+  try {
+    await removeProjectMember(project.id, memberId);
+
+    setProject((prev) => ({
+      ...prev,
+      team: prev.team.filter((m) => m.id !== memberId),
+    }));
+
+    toast.success("Member removed");
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to remove member");
+  }
+};
+
+
 
 
 
@@ -538,9 +565,13 @@ const renderPreview = (doc) => {
                 </div>
                 <div className="flex items-center gap-6">
                    <span className="bg-gray-100 text-[10px] font-bold px-2 py-0.5 rounded text-gray-500 tracking-wide">{member.dept}</span>
-                   <button className="text-gray-300 hover:text-red-400">
-                     <X size={16} />
-                   </button>
+                   <button
+                      onClick={() => handleRemoveMember(member.id)}
+                      className="text-gray-300 hover:text-red-400"
+                    >
+                      <X size={16} />
+                    </button>
+
                 </div>
               </div>
             ))}
