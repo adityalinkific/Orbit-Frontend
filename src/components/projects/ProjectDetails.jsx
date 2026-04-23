@@ -83,27 +83,39 @@ const fetchProject = async () => {
       lead: data.project_lead || "Unassigned",
 
       category: getDepartmentName(data.department_id),
-      timeline: formatTimeline(data.created_at, data.updated_at),
+      timeline: formatTimeline(data.start_date, data.end_date),
 
       spillover: 0,
       tasks: [],
-      team: [],
+
+      // ✅ FIX HERE
+      team: (data.members || []).map((member) => ({
+        id: member.id,
+        name: member.name || getUserName(member.user_id),
+        role: member.role || "Member",
+        dept: getDepartmentName(member.department_id),
+      })),
     });
 
     setDocuments(
-  (data.documents || []).map((doc) => ({
-    id: doc.id,
-    file_name: doc.file_name || "Untitled",
-    uploaded_by: doc.uploaded_by || "Unknown",
-    created_at: doc.created_at,
-    file_url: doc.file_url, 
-  }))
-);
-
+      (data.documents || []).map((doc) => ({
+        id: doc.id,
+        file_name: doc.file_name || "Untitled",
+        uploaded_by: getUserName(doc.uploaded_by) || "Unknown",
+        created_at: doc.created_at,
+        file_url: doc.file_url,
+      }))
+    );
 
   } catch (err) {
     console.error(err);
   }
+};
+
+
+const getUserName = (id) => {
+  const user = users.find((u) => u.id === id);
+  return user ? user.name : "Unknown";
 };
 
 
@@ -591,7 +603,7 @@ const renderPreview = (doc) => {
 
                   {/* USER */}
                   <span className="text-gray-500 text-xs">
-                    User #{doc.uploaded_by}
+                    {doc.uploaded_by}
                   </span>
 
                   {/* DATE */}
