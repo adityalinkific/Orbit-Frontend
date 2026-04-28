@@ -9,6 +9,9 @@ import ProjectModal from "../../components/projects/ProjectModal";
 import { toast } from "react-hot-toast";
 
 
+import { getAllTasksService } from "../../services/tasks.services";
+
+
 export default function Projects() {
   const [tab, setTab] = useState("active");
   const [openModal, setOpenModal] = useState(false);
@@ -22,6 +25,8 @@ export default function Projects() {
   const [departments, setDepartments] = useState([]);
 
   const [editingProject, setEditingProject] = useState(null);
+
+  const [search, setSearch] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -118,26 +123,35 @@ const handleChange = (e) => {
 
     const fetchProjects = async () => {
       try {
-        const data = await getAllProjects();
+        const [projRes, taskRes] = await Promise.all([
+          getAllProjects(),
+          getAllTasksService()
+        ]);
 
-        const formatted = data.map((p) => ({
-          id: p.id,
-          name: p.name,
-          description: p.description,
-          department_id: p.department_id,
+        const allTasks = taskRes?.data || [];
 
-          
-          progress: p.progress || 0,
-          overdue: p.overdue_tasks_count || 0,
-          owner_id: p.owner_id,
-          owner: getUserName(p.owner_id),
+        const formatted = projRes.map((p) => {
+          const projectTasks = allTasks.filter(t => Number(t.project_id) === Number(p.id));
+          const totalTasks = projectTasks.length;
+          const completedTasks = projectTasks.filter(t => t.is_completed).length;
+          const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : (p.progress || 0);
 
-
-          
-          status: getProjectStatus(p),
-          department: getDepartmentName(p.department_id),
-          tasks: 0, // until backend gives total tasks
-        }));
+          return {
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            department_id: p.department_id,
+            
+            progress: progress,
+            overdue: p.overdue_tasks_count || 0,
+            owner_id: p.owner_id,
+            owner: getUserName(p.owner_id),
+            
+            status: getProjectStatus(p),
+            department: getDepartmentName(p.department_id),
+            total_tasks: totalTasks,
+          };
+        });
 
         setProjects(formatted);
       } catch (err) {
@@ -174,7 +188,7 @@ const fetchUsers = async () => {
 
   } catch (err) {
     console.error("Failed to fetch users", err);
-    setUsers([]); // fallback safety
+    setUsers([]); 
   }
 };
 
@@ -186,7 +200,7 @@ const handleToggleStatus = async (projectId, newStatus) => {
 
     setProjects((prev) =>
       prev.map((p) =>
-        p.id === projectId ? { ...p, status: newStatus } : p
+        Number(p.id) === Number(projectId) ? { ...p, status: newStatus } : p
       )
     );
   } catch (err) {
@@ -194,22 +208,56 @@ const handleToggleStatus = async (projectId, newStatus) => {
   }
 };
 
-const getUserName = (id) => {
-  const user = users.find((u) => u.id === id);
+const getUserName = (userId) => {
+  if (!userId) return "Unassigned";
+  const user = users.find((u) => Number(u.id) === Number(userId));
   return user ? user.name : "Unassigned";
 };
 
 
 
 
-  const fetchMetrics = async () => {
+  useEffect(() => {
+  fetchDepartments();
+  fetchMetrics();
+  fetchUsers(); 
+}, []);
+
+useEffect(() => {
+  fetchProjects();
+}, [departments, users]);
+
+const fetchMetrics = async () => {
   try {
     const data = await getDashboardMetrics();
-    setMetrics(data);
+    if (data) {
+      setMetrics(data);
+    } else {
+      throw new Error("No data from metrics API");
+    }
   } catch (err) {
-    console.error("Failed to fetch metrics", err);
+    console.error("Failed to fetch metrics, calculating client-side", err);
+    // Calculate metrics from projects array as fallback
+    if (projects.length > 0) {
+      const activeCount = projects.filter(p => p.status !== "archived").length;
+      const totalCompletion = projects.reduce((acc, p) => acc + (p.progress || 0), 0);
+      const avgCompletion = projects.length > 0 ? Math.round(totalCompletion / projects.length) : 0;
+      const riskCount = projects.filter(p => p.status === "risk" || p.status === "delayed").length;
+
+      setMetrics({
+        active_projects_count: activeCount,
+        average_completion_percentage: avgCompletion,
+        risk_alerts_count: riskCount,
+      });
+    }
   }
 };
+
+useEffect(() => {
+  if (projects.length > 0 && !metrics) {
+    fetchMetrics();
+  }
+}, [projects]);
 
 const getProjectStatus = (p) => {
   if (p.status === "archived") return "archived";
@@ -222,27 +270,20 @@ const getProjectStatus = (p) => {
 };
 
 
-const getDepartmentName = (id) => {
-  const dept = departments.find((d) => d.id === id);
+const getDepartmentName = (deptId) => {
+  if (!deptId) return "GENERAL";
+  const dept = departments.find((d) => Number(d.id) === Number(deptId));
   return dept?.name || "GENERAL";
 };
 
 
-useEffect(() => {
-  fetchDepartments();
-  fetchMetrics();
-  fetchUsers(); 
-}, []);
-
-useEffect(() => {
-  if (departments.length && users.length) {
-    fetchProjects();
-  }
-}, [departments, users]);
-
-
 
 const filteredProjects = projects.filter((p) => {
+  const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) || 
+                       (p.description && p.description.toLowerCase().includes(search.toLowerCase()));
+  
+  if (!matchesSearch) return false;
+
   if (tab === "active") return p.status !== "archived";
   if (tab === "archived") return p.status === "archived";
   return true;
@@ -262,29 +303,50 @@ const filteredProjects = projects.filter((p) => {
       </div>
 
       {/* ACTION BAR */}
-      <div className="px-6 py-4 flex gap-2 items-center">
-        <div className="shadow-md rounded-sm bg-[#f1f5f9]">
-          <button
-            onClick={() => setTab("active")}
-            className={`px-4 py-1.5 text-sm rounded-sm font-medium ${
-              tab === "active"
-                ? "bg-white text-blue-500"
-                : "text-gray-600"
-            }`}
-          >
-            Active
-          </button>
+      <div className="px-6 py-4 flex flex-wrap gap-4 items-center justify-between">
+        <div className="flex gap-4 items-center">
+          <div className="shadow-sm rounded-lg bg-gray-100 p-1 flex">
+            <button
+              onClick={() => setTab("active")}
+              className={`px-4 py-1.5 text-sm rounded-md font-medium transition ${
+                tab === "active"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Active
+            </button>
 
-          <button
-            onClick={() => setTab("archived")}
-            className={`px-4 py-1.5 text-sm rounded-sm font-medium cursor-pointer ${
-              tab === "archived"
-                ? "bg-white text-blue-500"
-                : "text-gray-600"
-            }`}
-          >
-            Archived
-          </button>
+            <button
+              onClick={() => setTab("archived")}
+              className={`px-4 py-1.5 text-sm rounded-md font-medium transition ${
+                tab === "archived"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Archived
+            </button>
+          </div>
+
+          {/* SEARCH BAR */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search projects..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-4 pr-10 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-[240px]"
+            />
+            {search && (
+              <button 
+                onClick={() => setSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
         </div>
 
         <button
@@ -300,10 +362,9 @@ const filteredProjects = projects.filter((p) => {
             });
             setOpenModal(true);
           }}
-
-          className="flex gap-1 text-sm items-center px-4 py-1.5 font-medium rounded-sm bg-[#005fff] text-white cursor-pointer"
+          className="flex gap-2 items-center px-6 py-2 font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition shadow-md"
         >
-          <Plus size={16} />
+          <Plus size={18} />
           Create Project
         </button>
       </div>

@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Share2, Plus, Filter, MoreHorizontal, X, Zap, Upload, Trash2, Calendar, Eye, Trash } from "lucide-react";
-import { deleteProjectService, getProjectById, removeProjectMember, updateProjectService, uploadProjectDocument } from "../../services/project.service";
+import { deleteProjectService, getProjectById, removeProjectMember, updateProjectService, uploadProjectDocument, deleteProjectDocument } from "../../services/project.service";
 import { getDepartments } from "../../services/department.service";
 import { getAllUsersService } from "../../services/user.service";
 import ProjectModal from "./ProjectModal";
@@ -9,6 +9,8 @@ import { useNavigate } from "react-router-dom";
 import ConfirmDeleteModal from "../common/ConfirmDeleteModal";
 import { toast } from "react-hot-toast";
 import AddMemberModal from "./AddMemberModal";
+import api from "../../services/api";
+import { getAllTasksService } from "../../services/tasks.services";
 
 export default function ProjectDetails() {
   const { id } = useParams();
@@ -18,6 +20,24 @@ export default function ProjectDetails() {
   const [uploading, setUploading] = useState(false);
   const [openMemberModal, setOpenMemberModal] = useState(false);
   const [previewDoc, setPreviewDoc] = useState(null);
+  const [previewBlobUrl, setPreviewBlobUrl] = useState(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+
+  const handleDownloadAction = async (doc) => {
+    try {
+      const res = await api.get(`/projects/${project.id}/document/${doc.id}/view`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', doc.file_name || 'document');
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to download");
+    }
+  };
 
 
 
@@ -64,15 +84,46 @@ useEffect(() => {
 }, []);
 
 useEffect(() => {
-  if (users.length && departments.length) {
-    fetchProject();
-  }
+  fetchProject();
 }, [id, users, departments]);
 
 
 const fetchProject = async () => {
   try {
-    const data = await getProjectById(id);
+    const [projectData, taskRes] = await Promise.all([
+      getProjectById(id),
+      getAllTasksService()
+    ]);
+
+    const data = projectData;
+    console.log("🚀 FULL Project Detail Data:", data);
+    console.log("🚀 Project documents key check:", {
+      documents: data.documents,
+      project_documents: data.project_documents,
+      files: data.files,
+      document: data.document
+    });
+    const allTasks = taskRes?.data || [];
+    const projectTasks = allTasks.filter(t => Number(t.project_id) === Number(id));
+    const projectDocs = data.documents || data.project_documents || data.files || data.document || [];
+
+    // Calculate metrics
+    const totalTasks = projectTasks.length;
+    const completedTasks = projectTasks.filter(t => t.is_completed).length;
+    const completionPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : (data.progress || 0);
+    
+    const overdueTasks = projectTasks.filter(t => {
+      if (t.is_completed) return false;
+      if (!t.due_date) return false;
+      return new Date(t.due_date) < new Date();
+    }).length;
+
+    const spilloverCount = projectTasks.filter(t => {
+      // Logic for spillover: overdue and incomplete
+      if (t.is_completed) return false;
+      if (!t.due_date) return false;
+      return new Date(t.due_date) < new Date();
+    }).length;
 
     setProject({
       id: data.id,
@@ -83,23 +134,28 @@ const fetchProject = async () => {
       start_date: data.start_date,
       end_date: data.end_date,
 
-      completion: data.progress || 0,
-      blocked: data.overdue_tasks_count || 0,
+      completion: completionPercent,
+      blocked: overdueTasks || data.overdue_tasks_count || 0,
       status: getProjectStatus(data),
-      lead: data.project_lead || "Unassigned",
+      lead: data.project_lead || getUserName(data.owner_id),
 
       category: getDepartmentName(data.department_id),
       timeline: formatTimeline(data.start_date, data.end_date),
 
-      spillover: 0,
-      tasks: [],
+      spillover: spilloverCount,
+      tasks: projectTasks.map(t => ({
+        id: t.id,
+        name: t.title,
+        priority: t.priority || "Medium",
+        date: t.due_date ? new Date(t.due_date).toLocaleDateString() : "No Date",
+        status: t.is_completed ? "Completed" : "Ongoing"
+      })),
 
-      // ✅ FIXED
       team: (data.members || []).map((member) => {
         const user = users.find((u) => u.id === member.user_id);
 
         return {
-          id: member.user_id, // ✅ IMPORTANT FIX
+          id: member.user_id,
           name: user?.name || "Unknown",
           role: member.role || "Member",
           dept: getDepartmentName(user?.department_id),
@@ -108,12 +164,12 @@ const fetchProject = async () => {
     });
 
     setDocuments(
-      (data.documents || []).map((doc) => ({
+      projectDocs.map((doc) => ({
         id: doc.id,
         file_name: doc.file_name || "Untitled",
         uploaded_by: getUserName(doc.uploaded_by) || "Unknown",
         created_at: doc.created_at,
-        file_url: doc.file_url,
+        file_url: `${import.meta.env.VITE_API_URL}/api/v1/projects/${data.id}/document/${doc.id}/view`,
       }))
     );
   } catch (err) {
@@ -123,9 +179,10 @@ const fetchProject = async () => {
 
 
 
-const getUserName = (id) => {
-  const user = users.find((u) => u.id === id);
-  return user ? user.name : "Unknown";
+const getUserName = (userId) => {
+  if (!userId) return "Unassigned";
+  const user = users.find((u) => Number(u.id) === Number(userId));
+  return user ? user.name : "Unknown User";
 };
 
 
@@ -140,7 +197,13 @@ const handleFileUpload = async (e) => {
 
     const newDoc = res.data || res;
 
-    setDocuments((prev) => [newDoc, ...prev]);
+    setDocuments((prev) => [{
+      id: newDoc.id,
+      file_name: newDoc.file_name || file.name,
+      uploaded_by: getUserName(newDoc.uploaded_by) || "Unknown",
+      created_at: newDoc.created_at || new Date().toISOString(),
+      file_url: `${import.meta.env.VITE_API_URL}/api/v1/projects/${project.id}/document/${newDoc.id}/view`,
+    }, ...prev]);
 
 
     toast.success("File uploaded successfully")
@@ -245,27 +308,27 @@ const getStatusConfig = (status) => {
         text: "text-green-600",
         bg: "bg-green-50",
       };
-    case "delayed":
-      return {
-        label: formatted,
-        text: "text-red-500",
-        bg: "bg-red-50",
-      };
     case "risk":
       return {
         label: "At Risk",
-        text: "text-orange-500",
+        text: "text-red-600",
+        bg: "bg-red-50",
+      };
+    case "delayed":
+      return {
+        label: "Delayed",
+        text: "text-orange-600",
         bg: "bg-orange-50",
       };
-      case "archived":
+    case "archived":
       return {
         label: "Archived",
         text: "text-gray-500",
-        bg: "bg-gray-50",
+        bg: "bg-gray-100",
       };
     default:
       return {
-        label: formatted,
+        label: "Active",
         text: "text-blue-600",
         bg: "bg-blue-50",
       };
@@ -273,27 +336,25 @@ const getStatusConfig = (status) => {
 };
 
 const handlePreview = (doc) => {
-  if (!doc.file_url) {
-    toast.error("No preview available");
-    return;
-  }
-
-  window.open(doc.file_url, "_blank");
+  handleDownloadAction(doc);
 };
 
 const renderPreview = (doc) => {
-  if (!doc.file_url) {
-    return <p className="text-gray-400">No preview available</p>;
+  if (isPreviewLoading) {
+    return <div className="text-gray-400">Loading preview... fetching document</div>;
+  }
+  
+  if (!previewBlobUrl) {
+    return <p className="text-gray-400">Failed to load preview or no preview available</p>;
   }
 
-  const ext = doc.file_name.split(".").pop()?.toLowerCase();
-  const url = doc.file_url;
+  const ext = doc.file_name?.split(".").pop()?.toLowerCase();
 
   // 🖼️ IMAGES
-  if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) {
+  if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext) || doc.blob_type?.startsWith("image/")) {
     return (
       <img
-        src={url}
+        src={previewBlobUrl}
         alt={doc.file_name}
         className="max-h-full max-w-full object-contain"
       />
@@ -301,20 +362,43 @@ const renderPreview = (doc) => {
   }
 
   // 📄 PDF
-  if (ext === "pdf") {
+  if (ext === "pdf" || doc.blob_type === "application/pdf") {
     return (
       <iframe
-        src={url}
+        src={previewBlobUrl}
         title="PDF Preview"
         className="w-full h-full"
       />
     );
   }
 
-  // 📝 DOC / DOCX / XLS / XLSX / PPT → GOOGLE VIEWER
-  if (["doc", "docx", "xls", "xlsx", "ppt", "pptx"].includes(ext)) {
+  // 📝 DOCX Local Preview
+  if ((ext === "docx" || ext === "doc") && doc.parsedDocxHtml) {
+    return (
+      <div 
+        className="w-full h-full bg-white text-black p-8 overflow-y-auto document-preview prose max-w-none text-left"
+        dangerouslySetInnerHTML={{ __html: doc.parsedDocxHtml }}
+      />
+    );
+  }
+
+  // 📊 XLSX Local Preview
+  if (["xlsx", "xls", "csv"].includes(ext) && doc.parsedXlsxHtml) {
+    return (
+      <div 
+        className="w-full h-full bg-white text-black p-8 overflow-auto excel-preview prose max-w-none text-left [&_table]:border-collapse [&_table]:w-full [&_td]:border [&_td]:border-gray-300 [&_td]:p-2"
+        dangerouslySetInnerHTML={{ __html: doc.parsedXlsxHtml }}
+      />
+    );
+  }
+
+  // 📝 PPTX -> Need to fallback since we don't have a reliable viewer for it, Google Viewer might fail. Let's still attempt Google Viewer if it meets these formats just as last generic resisitance
+  if (["ppt", "pptx"].includes(ext)) {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token") || "";
+    const rawUrl = `${import.meta.env.VITE_API_URL}/api/v1/projects/${project?.id}/documents/${doc?.id}/view?token=${token}`;
+    
     const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(
-      url
+      rawUrl
     )}&embedded=true`;
 
     return (
@@ -326,20 +410,18 @@ const renderPreview = (doc) => {
     );
   }
 
-  // ⚠️ FALLBACK
+  // For anything else, provide download option
   return (
     <div className="text-center">
       <p className="text-gray-500 mb-3">
-        Preview not supported for this file type
+        Document preview is fully supported for PDF, Images, Word and Excel files. Powerpoint viewers might fail on secured endpoints.
       </p>
-      <a
-        href={url}
-        target="_blank"
-        rel="noreferrer"
-        className="text-blue-600 underline text-sm"
+      <button
+        onClick={() => handleDownloadAction(doc)}
+        className="text-blue-600 underline text-sm bg-transparent border-none cursor-pointer"
       >
-        Open / Download File
-      </a>
+        Download File instead
+      </button>
     </div>
   );
 };
@@ -357,6 +439,17 @@ const handleRemoveMember = async (memberId) => {
   } catch (err) {
     console.error(err);
     toast.error("Failed to remove member");
+  }
+};
+
+const handleDeleteDoc = async (docId) => {
+  try {
+    await deleteProjectDocument(project.id, docId);
+    setDocuments((prev) => prev.filter((d) => d.id !== docId));
+    toast.success("Document deleted successfully");
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to delete document");
   }
 };
 
@@ -495,7 +588,7 @@ const handleRemoveMember = async (memberId) => {
            <div className="grid grid-cols-4 gap-5">
               <StatCard title="COMPLETION %" value={`${project.completion}%`} />
               <StatCard title="BLOCKED TASKS" value={project.blocked} isAlert={project.blocked > 0} />
-              <StatCard title="SPILLOVER TASKS" value={project.spillover} />
+              <StatCard title="SPILLOVER TASKS" value={project.spillover} isAlert={project.spillover > 0} />
               <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
                 TIMELINE STATUS
@@ -617,14 +710,13 @@ const handleRemoveMember = async (memberId) => {
                 >
                   {/* NAME */}
                   <div className="col-span-2 flex items-center gap-2">
-                    <a
-                      href={doc.file_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="font-medium text-blue-600 hover:underline truncate"
+                    <button
+                      onClick={() => handleDownloadAction(doc)}
+                      className="font-medium text-blue-600 hover:underline truncate bg-transparent border-0 cursor-pointer text-left"
+                      title="Download Document"
                     >
                       {doc.file_name}
-                    </a>
+                    </button>
                   </div>
 
                   {/* TYPE */}
@@ -645,7 +737,45 @@ const handleRemoveMember = async (memberId) => {
                   {/* ACTIONS */}
                   <div className="flex justify-end gap-3">
                     <button
-                      onClick={() => setPreviewDoc(doc)}
+                      onClick={async () => {
+                        setPreviewDoc(doc);
+                        setIsPreviewLoading(true);
+                        setPreviewBlobUrl(null);
+                        try {
+                          const res = await api.get(`/projects/${project.id}/document/${doc.id}/view`, { responseType: 'blob' });
+                          const blob = new Blob([res.data], { type: res.headers['content-type'] || res.data.type });
+                          const url = URL.createObjectURL(blob);
+                          
+                          let parsedDocxHtml = null;
+                          let parsedXlsxHtml = null;
+                          const ext = doc.file_name?.split(".").pop()?.toLowerCase();
+                          
+                          if (ext === "docx" || ext === "doc") {
+                            try {
+                               const mammoth = await import("mammoth");
+                               const arrayBuffer = await blob.arrayBuffer();
+                               const result = await mammoth.convertToHtml({arrayBuffer});
+                               parsedDocxHtml = result.value;
+                            } catch(e) { console.error("Mammoth parse failed", e); }
+                          } else if (ext === "xlsx" || ext === "csv" || ext === "xls") {
+                            try {
+                               const xlsx = await import("xlsx");
+                               const arrayBuffer = await blob.arrayBuffer();
+                               const workbook = xlsx.read(arrayBuffer, { type: "array" });
+                               const firstSheetName = workbook.SheetNames[0];
+                               const worksheet = workbook.Sheets[firstSheetName];
+                               parsedXlsxHtml = xlsx.utils.sheet_to_html(worksheet);
+                            } catch(e) { console.error("XLSX parse failed", e); }
+                          }
+
+                          setPreviewDoc({ ...doc, blob_type: blob.type, parsedDocxHtml, parsedXlsxHtml });
+                          setPreviewBlobUrl(url);
+                        } catch (err) {
+                          toast.error("Failed to load preview data");
+                        } finally {
+                          setIsPreviewLoading(false);
+                        }
+                      }}
                       className="text-gray-400 hover:text-blue-500"
                     >
                       <Eye size={16} />

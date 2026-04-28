@@ -16,13 +16,10 @@ api.interceptors.request.use((config) => {
     localStorage.getItem("token") ||
     sessionStorage.getItem("token");
 
-  console.log("🔥 TOKEN FROM STORAGE:", token);
-
   if (token) {
-    if (token) {
-  config.headers["x-access-token"] = token;
-}
-    console.log("🚀 FINAL HEADER:", config.headers.Authorization);
+    config.headers["x-access-token"] = token;
+    config.headers["Authorization"] = `Bearer ${token}`;
+    // console.log("🚀 FINAL HEADERS:", config.headers);
   }
 
   return config;

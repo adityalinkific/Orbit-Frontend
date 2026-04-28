@@ -2,8 +2,7 @@ import api from "./api";
 
 export const getAllProjects = async () => {
   const res = await api.get("/projects/project-detail");
-   console.log(res.data?.data)
-  return res.data?.data || [];
+  return res.data?.data || res.data || [];
 };
 
 export const createProjectService = async (payload) => {
@@ -36,7 +35,7 @@ export const uploadProjectDocument = async (projectId, file) => {
   formData.append("file", file);
 
   const res = await api.post(
-    `/projects/${projectId}/documents`,
+    `/projects/${projectId}/document`,
     formData,
     {
       headers: {
@@ -58,5 +57,10 @@ export const removeProjectMember = async (projectId, memberId) => {
   const res = await api.delete(
     `/projects/${projectId}/members/${memberId}`
   );
+  return res.data;
+};
+
+export const deleteProjectDocument = async (projectId, documentId) => {
+  const res = await api.delete(`/projects/${projectId}/document/${documentId}`);
   return res.data;
 };

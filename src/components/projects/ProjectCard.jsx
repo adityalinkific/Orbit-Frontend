@@ -114,7 +114,7 @@ export default function ProjectCard({ project, onToggleStatus }) {
         </span>        </div>
 
         <span className="text-sm font-bold text-slate-900">
-          {project.total_tasks || 24}{" "}
+          {project.total_tasks || 0}{" "}
           <span className="text-gray-400 font-normal">TASKS</span>
         </span>
       </div>
