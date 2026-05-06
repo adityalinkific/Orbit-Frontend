@@ -49,7 +49,7 @@ export default function TaskDetails({ task, onEdit, onDelete }) {
         <span className="px-3 py-1 border border-gray-200 rounded-full text-xs text-gray-500 font-medium capitalize flex items-center gap-1.5">
           <div className={`w-2 h-2 rounded-full ${
             task.status === 'completed' ? 'bg-emerald-500' :
-            task.status === 'in-progress' ? 'bg-blue-500' :
+            task.status === 'in progress' ? 'bg-blue-500' :
             'bg-gray-400'
           }`} />
           {task.status?.replace('-', ' ') || 'To Do'}

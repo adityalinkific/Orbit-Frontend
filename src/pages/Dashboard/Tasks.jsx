@@ -25,7 +25,7 @@ const sortOptions = [
 const statusOptions = [
   { label: "Status", value: "all" },
   { label: "To Do", value: "to-do" },
-  { label: "In Progress", value: "in-progress" },
+  { label: "In Progress", value: "in progress" },
   { label: "Completed", value: "completed" },
 ];
 
@@ -81,13 +81,27 @@ export default function Tasks() {
 
   const handleStatusChange = async (taskId, newStatus) => {
     try {
-      // Create a copy of tasks to show optimistic UI update
-      setTasks(prev => prev.map(t => t.id === Number(taskId) ? { ...t, status: newStatus } : t));
-      await updateTaskService(taskId, { status: newStatus });
+      const task = tasks.find(t => t.id === Number(taskId));
+      if (!task) return;
+
+      // Optimistic UI update
+      setTasks(prev =>
+        prev.map(t =>
+          t.id === Number(taskId) ? { ...t, status: newStatus } : t
+        )
+      );
+
+      await updateTaskService(taskId, {
+        status: newStatus,
+        project_id: task.project_id,
+        department_id: task.department_id,
+        title: task.title, // optional but safe
+      });
+
       loadTasks();
     } catch (err) {
       console.error("Failed to update status", err);
-      loadTasks(); // Revert on failure
+      loadTasks(); // rollback
     }
   };
 
@@ -145,11 +159,7 @@ const confirmDelete = async () => {
 
     // 🏷️ Tab filter (ongoing / completed etc.)
     const matchesTab =
-      tab === "ongoing"
-        ? task.status !== "completed"
-        : tab === "completed"
-        ? task.status === "completed"
-        : true;
+      tab === "all" ? true : task.category === tab;
 
     return matchesSearch && matchesStatus && matchesTab;
   })

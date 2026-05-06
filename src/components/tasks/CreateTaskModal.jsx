@@ -22,6 +22,8 @@ export default function CreateTaskModal({ open, onOpenChange, reload }) {
     task_type: "daily",
     priority: "low",
     due_date: "",
+    status: "to-do",
+    category: "ongoing",
   });
 
   const [departments, setDepartments] = useState([]);
@@ -82,11 +84,15 @@ setProjects(Array.isArray(projectRes) ? projectRes : []);
         description: form.description,
         project_id: Number(form.project_id),
         department_id: Number(form.department_id),
-        task_type: form.task_type.toLowerCase(), 
+        task_type: form.task_type.toLowerCase(),
         priority: form.priority.toLowerCase(),
-        due_date: form.due_date
+        due_date: form.due_date,
+
+
+        status: form.status || "to-do",
+        is_completed: form.status === "completed",
       });
-       toast.success("Task created successfully", { id: toastId });
+            toast.success("Task created successfully", { id: toastId });
 
       reload();
       onOpenChange(false);
@@ -111,6 +117,8 @@ setProjects(Array.isArray(projectRes) ? projectRes : []);
       task_type: "daily",
       priority: "low",
       due_date: "",
+      status: "to-do",
+      category: "ongoing",
     });
   };
 
@@ -279,10 +287,43 @@ setProjects(Array.isArray(projectRes) ? projectRes : []);
                   <Select.Portal>
                     <Select.Content className="bg-white text-slate-900 shadow-xl rounded-xl border border-slate-200 overflow-hidden z-[110]">
                       <Select.Viewport className="p-1">
-                        {[{ val: "to-do", label: "To Do"}, { val: "in-progress", label: "In Progress"}, { val: "completed", label: "Completed" }].map((item) => (
+                        {[{ val: "to-do", label: "To Do"}, { val: "in progress", label: "In Progress"}, { val: "completed", label: "Completed" }].map((item) => (
                           <Select.Item key={item.val} value={item.val} className="flex items-center justify-between px-3 py-2 text-sm rounded-lg cursor-pointer outline-none hover:bg-slate-50">
                             <Select.ItemText>{item.label}</Select.ItemText>
                             <Select.ItemIndicator><CheckIcon className="text-blue-600" /></Select.ItemIndicator>
+                          </Select.Item>
+                        ))}
+                      </Select.Viewport>
+                    </Select.Content>
+                  </Select.Portal>
+                </Select.Root>
+              </div>
+
+              {/* Category */}
+              <div className="flex flex-col">
+                <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">
+                  Category
+                </label>
+
+                <Select.Root
+                  value={form.category}
+                  onValueChange={(v) => setForm({ ...form, category: v })}
+                >
+                  <Select.Trigger className="flex items-center justify-between w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                    <Select.Value />
+                    <ChevronDownIcon />
+                  </Select.Trigger>
+
+                  <Select.Portal>
+                    <Select.Content className="bg-white  text-slate-900 shadow-xl rounded-xl border border-slate-200  z-[110]">
+                      <Select.Viewport className="p-1">
+                        {["ongoing", "completed", "delegated", "archive"].map((cat) => (
+                          <Select.Item
+                            key={cat}
+                            value={cat}
+                            className="px-3 py-2 text-sm rounded-lg hover:bg-slate-50 capitalize"
+                          >
+                            <Select.ItemText>{cat}</Select.ItemText>
                           </Select.Item>
                         ))}
                       </Select.Viewport>

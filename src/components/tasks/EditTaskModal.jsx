@@ -24,6 +24,7 @@ export default function EditTaskModal({ open, onOpenChange, reload, task }) {
     priority: "low",
     due_date: "",
     status: "to-do",
+    category: "ongoing",
   });
 
   const [loading, setLoading] = useState(false);
@@ -62,26 +63,28 @@ export default function EditTaskModal({ open, onOpenChange, reload, task }) {
         priority: task.priority || "low",
         due_date: task.due_date || "",
         status: task.status || "to-do",
+        category: task.category || "ongoing", 
       });
     }
   }, [open, task]);
 
   //  Reset form on close
-  useEffect(() => {
-    if (!open) {
-      setForm({
-        title: "",
-        description: "",
-        project_id: "",
-        department_id: "",
-        user_id: "",
-        task_type: "daily",
-        priority: "low",
-        due_date: "",
-        status: "to-do",
-      });
-    }
-  }, [open]);
+useEffect(() => {
+  if (!open) {
+    setForm({
+      title: "",
+      description: "",
+      project_id: "",
+      department_id: "",
+      user_id: "",
+      task_type: "daily",
+      priority: "low",
+      due_date: "",
+      status: task?.status || "to-do",
+      category: task?.category || "ongoing",
+    });
+  }
+}, [open, task]);
 
   const handleSubmit = async () => {
     if (!form.title.trim() || !form.department_id || !form.project_id) return;
@@ -99,6 +102,8 @@ export default function EditTaskModal({ open, onOpenChange, reload, task }) {
         priority: form.priority,
         due_date: form.due_date,
         status: form.status,
+        category: form.category,
+        is_completed: form.status === "completed",
       });
       toast.success("Task updated successfully", { id: toastId });
 
@@ -269,7 +274,7 @@ export default function EditTaskModal({ open, onOpenChange, reload, task }) {
                   <Select.Portal>
                     <Select.Content className="bg-white text-slate-900 shadow-xl rounded-xl border border-slate-200 overflow-hidden z-[110]">
                       <Select.Viewport className="p-1">
-                        {[{ val: "to-do", label: "To Do"}, { val: "in-progress", label: "In Progress"}, { val: "completed", label: "Completed" }].map((item) => (
+                        {[{ val: "to-do", label: "To Do"}, { val: "in progress", label: "In Progress"}, { val: "completed", label: "Completed" }].map((item) => (
                           <Select.Item key={item.val} value={item.val} className="flex items-center justify-between px-3 py-2 text-sm rounded-lg cursor-pointer outline-none hover:bg-slate-50">
                             <Select.ItemText>{item.label}</Select.ItemText>
                             <Select.ItemIndicator><CheckIcon className="text-blue-600" /></Select.ItemIndicator>
@@ -280,6 +285,38 @@ export default function EditTaskModal({ open, onOpenChange, reload, task }) {
                   </Select.Portal>
                 </Select.Root>
               </div>
+
+              <div className="flex flex-col">
+              <label className="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider">
+                Category
+              </label>
+
+              <Select.Root
+                value={form.category}
+                onValueChange={(v) => setForm({ ...form, category: v })}
+              >
+                <Select.Trigger className="flex items-center justify-between w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                  <Select.Value />
+                  <ChevronDownIcon />
+                </Select.Trigger>
+
+                <Select.Portal>
+                  <Select.Content className="bg-white text-slate-900 shadow-xl rounded-xl border border-slate-200 overflow-hidden z-[110]">
+                    <Select.Viewport className="p-1">
+                      {["ongoing", "completed", "delegated", "archive"].map((cat) => (
+                        <Select.Item
+                          key={cat}
+                          value={cat}
+                          className="px-3 py-2 text-sm rounded-lg hover:bg-slate-50 capitalize"
+                        >
+                          <Select.ItemText>{cat}</Select.ItemText>
+                        </Select.Item>
+                      ))}
+                    </Select.Viewport>
+                  </Select.Content>
+                </Select.Portal>
+              </Select.Root>
+            </div>
 
               {/* Task Type */}
                             <div className="flex flex-col">

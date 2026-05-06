@@ -84,8 +84,15 @@ useEffect(() => {
 }, []);
 
 useEffect(() => {
-  fetchProject();
-}, [id, users, departments]);
+  fetchDepartments();
+  fetchUsers();
+}, []);
+
+useEffect(() => {
+  if (users.length && departments.length) {
+    fetchProject();
+  }
+}, [id]);
 
 
 const fetchProject = async () => {
@@ -172,7 +179,6 @@ const fetchProject = async () => {
           file_name: doc.file_name || "Untitled",
           uploaded_by: getUserName(doc.uploaded_by) || "Unknown",
           created_at: doc.created_at,
-          file_url: `${import.meta.env.VITE_API_URL}/api/v1/projects/${data.id}/documents/${docId}/view`,
         };
       })
     );
@@ -206,7 +212,6 @@ const handleFileUpload = async (e) => {
       file_name: newDoc.file_name || file.name,
       uploaded_by: getUserName(newDoc.uploaded_by) || "Unknown",
       created_at: newDoc.created_at || new Date().toISOString(),
-      file_url: `${import.meta.env.VITE_API_URL}/api/v1/projects/${project.id}/documents/${newDoc.id}/view`,
     }, ...prev]);
 
 
@@ -389,8 +394,9 @@ const renderPreview = (doc) => {
   // 📊 XLSX Local Preview
   if (["xlsx", "xls", "csv"].includes(ext) && doc.parsedXlsxHtml) {
     return (
-      <div 
+      <div
         className="w-full bg-white text-black p-6 overflow-auto"
+        dangerouslySetInnerHTML={{ __html: doc.parsedXlsxHtml }}
       />
     );
   }
@@ -455,6 +461,14 @@ const handleDeleteDoc = async (docId) => {
     toast.error("Failed to delete document");
   }
 };
+
+useEffect(() => {
+  return () => {
+    if (previewBlobUrl) {
+      URL.revokeObjectURL(previewBlobUrl);
+    }
+  };
+}, []);
 
 
 
@@ -814,7 +828,11 @@ const handleDeleteDoc = async (docId) => {
               <h3 className="text-sm font-semibold truncate">
                 {previewDoc.file_name}
               </h3>
-              <button onClick={() => setPreviewDoc(null)}>
+              <button onClick={() => {
+                if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl);
+                setPreviewDoc(null);
+                setPreviewBlobUrl(null);
+              }}>
                 <X size={18} />
               </button>
             </div>

@@ -16,6 +16,8 @@ api.interceptors.request.use((config) => {
     localStorage.getItem("token") ||
     sessionStorage.getItem("token");
 
+    localStorage.removeItem("token")
+
   if (token) {
     config.headers["x-access-token"] = token;
     config.headers["Authorization"] = `Bearer ${token}`;

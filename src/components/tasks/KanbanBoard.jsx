@@ -25,7 +25,7 @@ const getDeptStyles = (dept) => {
 
 const columnConfig = {
   "to-do": { title: "To Do", countColor: "text-gray-400" },
-  "in-progress": { title: "In Progress", countColor: "text-blue-500" },
+  "in progress": { title: "In Progress", countColor: "text-blue-500" },
   "completed": { title: "Completed", countColor: "text-emerald-500" }
 };
 
@@ -70,17 +70,17 @@ function TaskCard({ task, onDragStart }) {
 export default function KanbanBoard({ tasks = [], onStatusChange }) {
   const [columnTasks, setColumnTasks] = useState({
     "to-do": [],
-    "in-progress": [],
+    "in progress": [],
     "completed": []
   });
 
   const [draggedTaskId, setDraggedTaskId] = useState(null);
 
   useEffect(() => {
-    const newColumns = { "to-do": [], "in-progress": [], "completed": [] };
+    const newColumns = { "to-do": [], "in progress": [], "completed": [] };
     tasks.forEach(task => {
       if (task.status === 'completed') newColumns["completed"].push(task);
-      else if (task.status === 'in-progress') newColumns["in-progress"].push(task);
+      else if (task.status === 'in progress') newColumns["in progress"].push(task);
       else newColumns["to-do"].push(task);
     });
     setColumnTasks(newColumns);
